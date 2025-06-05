@@ -49,7 +49,7 @@ function User(){
                 try {
                     const userData = JSON.parse(savedUser)
                     console.log('🔄 Restoring user from localStorage:', userData)
-                    setUser(userData.email)
+                    setUser(userData) // Store full user object
                     setUserProfile(userData)
                     return
                 } catch (e) {
@@ -82,7 +82,7 @@ function User(){
             }
             
             // Update user state and save to localStorage
-            setUser(userData.email)
+            setUser(userData) // Store full user object
             setUserProfile(userData)
             localStorage.setItem('user', JSON.stringify(userData))
         }
@@ -97,7 +97,12 @@ function User(){
         if (userProfile?.user_name) {
             return userProfile.user_name
         }
-        if (user) {
+        // Handle case where user is an object with email
+        if (user && typeof user === 'object' && user.email) {
+            return user.email.substring(0, user.email.lastIndexOf("@"))
+        }
+        // Handle case where user is a string (email)
+        if (user && typeof user === 'string') {
             return user.substring(0, user.lastIndexOf("@"))
         }
         return "User"
@@ -119,10 +124,15 @@ function User(){
         return "U"
     }
 
+    // Check if user is logged in
+    const isLoggedIn = () => {
+        return user && (typeof user === 'string' || typeof user === 'object')
+    }
+
     return (
         <div className="user">
             {
-                !user
+                !isLoggedIn()
                 &&
                 <div 
                     className="login-btn user-btn"
@@ -132,7 +142,7 @@ function User(){
                 </div>
             }
             {
-                user
+                isLoggedIn()
                 &&
                 <div className="user-profile-wrapper">
                     <div 

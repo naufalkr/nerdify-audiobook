@@ -1,4 +1,3 @@
-// filepath: d:\Kampus\SEMESTER 6\PPL\nerdify-audiobook\monolith-base\frontend\src\pages\Login\index.js
 import React, { useState, useContext } from 'react'
 import { Link, useHistory } from 'react-router-dom'
 import { loginUser } from '../../utils/api'
@@ -50,14 +49,14 @@ function Login() {
                 // Extract token from response.data.data.access_token
                 token = data.access_token
                 
-                // Extract user data
+                // Extract user data with role information
                 userData = {
                     id: data.id,
                     email: data.email,
                     username: data.username,
                     user_name: data.username, // BE-LecSens uses 'username'
                     full_name: data.full_name,
-                    role: data.role,
+                    role: data.role, // This is the role name (SUPERADMIN, USER, etc.)
                     role_id: data.role_id,
                     is_verified: data.is_verified,
                     alamat: data.alamat,
@@ -68,19 +67,33 @@ function Login() {
             
             console.log('🔑 Extracted token:', token ? 'Found' : 'Not found')
             console.log('👤 Extracted user data:', userData)
+            console.log('🎭 User role:', userData?.role)
             
             if (token && userData) {
+                // Validate role - only allow SUPERADMIN and USER
+                if (!['SUPERADMIN', 'USER'].includes(userData.role)) {
+                    console.error('❌ Invalid role:', userData.role)
+                    setError('Access denied. Only SUPERADMIN and USER roles are allowed.')
+                    return
+                }
+                
                 // Store authentication data
                 localStorage.setItem('token', token)
                 localStorage.setItem('user', JSON.stringify(userData))
                 
-                // Update global context
-                setUser(userData.email)
+                // Update global context with user data including role
+                setUser(userData) // Store full user object
                 
-                console.log('✅ Login successful, redirecting to home...')
+                console.log('✅ Login successful, redirecting based on role...')
                 
-                // Redirect to home
-                history.push('/')
+                // Redirect based on role
+                if (userData.role === 'SUPERADMIN') {
+                    console.log('🔑 SUPERADMIN login - redirecting to admin dashboard')
+                    history.push('/admin') // Redirect to admin area for SUPERADMIN
+                } else {
+                    console.log('👤 USER login - redirecting to home')
+                    history.push('/') // Redirect to home for regular USER
+                }
             } else {
                 console.error('❌ No token or user data found in response')
                 console.log('🔍 Full response structure:', JSON.stringify(response.data, null, 2))

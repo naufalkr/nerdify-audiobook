@@ -1,10 +1,12 @@
 import React from 'react'
-
+import { useLocation, useHistory } from 'react-router-dom'
 import { BsSearch, BsFillHouseDoorFill } from 'react-icons/bs';
 
 import './style.css'
 
-function SideMenu({ history, location }) {
+function SideMenu() {
+    const location = useLocation()
+    const history = useHistory()
 
     const isSelected = (path) => location.pathname === path
 
@@ -14,6 +16,7 @@ function SideMenu({ history, location }) {
                 <img 
                     src="/assets/new-logo.svg"
                     className="logo"
+                    alt="The Book Hub"
                 />
                 <h3 className="org-name">The Book Hub</h3>
             </div>
@@ -24,7 +27,7 @@ function SideMenu({ history, location }) {
                     data-is-selected={isSelected("/")}
                 >
                        <BsFillHouseDoorFill size={"20px"}/> 
-                       <span class="text">
+                       <span className="text">
                             Home
                        </span>
                     </div>
@@ -34,7 +37,7 @@ function SideMenu({ history, location }) {
                     data-is-selected={isSelected("/search")}
                 >
                     <BsSearch size={"20px"}/> 
-                    <span class="text">
+                    <span className="text">
                         Search
                     </span>
                 </div>
