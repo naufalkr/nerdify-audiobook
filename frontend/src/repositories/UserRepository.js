@@ -122,7 +122,26 @@ class UserRepository {
         }
     }
 
-    // Delete user
+    // Update user by admin
+    async updateUser(userId, userData) {
+        try {
+            console.log(`UserRepository: Updating user ${userId}`, userData)
+            
+            const response = await axios.put(
+                `${this.baseURL}/api/admin/users/${userId}`,
+                userData,
+                { headers: this.getHeaders() }
+            )
+
+            console.log(`UserRepository: User ${userId} updated successfully`)
+            return response.data
+        } catch (error) {
+            console.error(`UserRepository: Error updating user:`, error)
+            throw new Error(error.response?.data?.message || 'Failed to update user')
+        }
+    }
+
+    // Delete user by admin  
     async deleteUser(userId) {
         try {
             console.log(`UserRepository: Deleting user ${userId}`)
@@ -132,11 +151,11 @@ class UserRepository {
                 { headers: this.getHeaders() }
             )
 
-            console.log(`UserRepository: User ${userId} deleted`)
+            console.log(`UserRepository: User ${userId} deleted successfully`)
             return response.data
         } catch (error) {
             console.error(`UserRepository: Error deleting user:`, error)
-            throw new Error('Failed to delete user')
+            throw new Error(error.response?.data?.message || 'Failed to delete user')
         }
     }
 
@@ -158,6 +177,25 @@ class UserRepository {
             // Fallback to localStorage user data
             const userData = localStorage.getItem('user')
             return userData ? JSON.parse(userData) : null
+        }
+    }
+
+    // Update user profile
+    async updateUserProfile(profileData) {
+        try {
+            console.log('UserRepository: Updating user profile', profileData)
+            
+            const response = await axios.put(
+                `${this.baseURL}/api/users/profile`,
+                profileData,
+                { headers: this.getHeaders() }
+            )
+
+            console.log('UserRepository: Profile updated successfully')
+            return response.data
+        } catch (error) {
+            console.error('UserRepository: Error updating profile:', error)
+            throw new Error(error.response?.data?.message || 'Failed to update profile')
         }
     }
 }

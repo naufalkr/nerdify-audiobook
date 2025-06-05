@@ -18,6 +18,18 @@ function AdminUsers() {
     const [selectedStatus, setSelectedStatus] = useState('')
     const [debugInfo, setDebugInfo] = useState('')
 
+    // Modal states
+    const [showEditModal, setShowEditModal] = useState(false)
+    const [showDeleteModal, setShowDeleteModal] = useState(false)
+    const [selectedUser, setSelectedUser] = useState(null)
+    const [editFormData, setEditFormData] = useState({
+        userName: '',
+        email: '',
+        full_name: '',
+        alamat: ''
+    })
+    const [processing, setProcessing] = useState(false)
+
     const itemsPerPage = 20
 
     const loadUsers = useCallback(async () => {
@@ -91,8 +103,90 @@ function AdminUsers() {
 
         loadUsers()
     }, [user, history, loadUsers])
-    
 
+    // Modal handlers
+    const handleEditUser = (userItem) => {
+        setSelectedUser(userItem)
+        setEditFormData({
+            userName: userItem.user_name || '',
+            email: userItem.email || '',
+            full_name: userItem.full_name || '',
+            alamat: userItem.alamat || ''
+        })
+        setShowEditModal(true)
+    }
+
+    const handleDeleteUser = (userItem) => {
+        setSelectedUser(userItem)
+        setShowDeleteModal(true)
+    }
+
+    const handleEditSubmit = async (e) => {
+        e.preventDefault()
+        if (!selectedUser) return
+
+        try {
+            setProcessing(true)
+            setError('')
+
+            await UserRepository.updateUser(selectedUser.id, editFormData)
+            
+            // Refresh users list
+            await loadUsers()
+            
+            // Close modal
+            setShowEditModal(false)
+            setSelectedUser(null)
+            
+            // Show success message
+            alert('User updated successfully!')
+        } catch (error) {
+            console.error('Error updating user:', error)
+            setError(error.message)
+        } finally {
+            setProcessing(false)
+        }
+    }
+
+    const handleDeleteConfirm = async () => {
+        if (!selectedUser) return
+
+        try {
+            setProcessing(true)
+            setError('')
+
+            await UserRepository.deleteUser(selectedUser.id)
+            
+            // Refresh users list
+            await loadUsers()
+            
+            // Close modal
+            setShowDeleteModal(false)
+            setSelectedUser(null)
+            
+            // Show success message
+            alert('User deleted successfully!')
+        } catch (error) {
+            console.error('Error deleting user:', error)
+            setError(error.message)
+        } finally {
+            setProcessing(false)
+        }
+    }
+
+    const handleCloseModal = () => {
+        setShowEditModal(false)
+        setShowDeleteModal(false)
+        setSelectedUser(null)
+        setEditFormData({
+            userName: '',
+            email: '',
+            full_name: '',
+            alamat: ''
+        })
+    }
+
+    // Event handlers
     const handleSearch = (e) => {
         setSearchTerm(e.target.value)
         setCurrentPage(1) // Reset to first page
@@ -187,7 +281,7 @@ function AdminUsers() {
                         <p>Manage platform users, roles, and permissions</p>
                     </div>
 
-                                        {/* Error Display */}
+                    {/* Error Display */}
                     {error && (
                         <div className="error-banner">
                             <strong>Error:</strong> {error}
@@ -321,7 +415,26 @@ function AdminUsers() {
                                                 <td>{formatDate(userItem.created_at)}</td>
                                                 <td>
                                                     <div className="action-buttons">
-                                                        <small>Actions coming soon</small>
+                                                        <button 
+                                                            className="action-btn edit-btn"
+                                                            onClick={() => handleEditUser(userItem)}
+                                                            disabled={processing}
+                                                            title="Edit User"
+                                                        >
+                                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                                                                <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/>
+                                                            </svg>
+                                                        </button>
+                                                        <button 
+                                                            className="action-btn delete-btn"
+                                                            onClick={() => handleDeleteUser(userItem)}
+                                                            disabled={processing}
+                                                            title="Delete User"
+                                                        >
+                                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                                                                <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
+                                                            </svg>
+                                                        </button>
                                                     </div>
                                                 </td>
                                             </tr>
@@ -332,7 +445,6 @@ function AdminUsers() {
                                 <div className="no-users">
                                     <h3>No users found</h3>
                                     <p>CORS issue resolved. Click "Test API Direct" to manually load users.</p>
-                                    
                                 </div>
                             )}
                         </div>
@@ -364,6 +476,103 @@ function AdminUsers() {
                     )}
                 </div>
             </main>
+
+            {/* Edit User Modal */}
+            {showEditModal && (
+                <div className="modal-overlay" onClick={handleCloseModal}>
+                    <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+                        <div className="modal-header">
+                            <h3>Edit User</h3>
+                            <button className="modal-close" onClick={handleCloseModal}>×</button>
+                        </div>
+                        <form onSubmit={handleEditSubmit}>
+                            <div className="modal-body">
+                                <div className="form-group">
+                                    <label htmlFor="userName">Username</label>
+                                    <input
+                                        type="text"
+                                        id="userName"
+                                        value={editFormData.userName}
+                                        onChange={(e) => setEditFormData(prev => ({...prev, userName: e.target.value}))}
+                                        required
+                                    />
+                                </div>
+                                <div className="form-group">
+                                    <label htmlFor="email">Email</label>
+                                    <input
+                                        type="email"
+                                        id="email"
+                                        value={editFormData.email}
+                                        onChange={(e) => setEditFormData(prev => ({...prev, email: e.target.value}))}
+                                        required
+                                    />
+                                </div>
+                                <div className="form-group">
+                                    <label htmlFor="full_name">Full Name</label>
+                                    <input
+                                        type="text"
+                                        id="full_name"
+                                        value={editFormData.full_name}
+                                        onChange={(e) => setEditFormData(prev => ({...prev, full_name: e.target.value}))}
+                                        required
+                                    />
+                                </div>
+                                <div className="form-group">
+                                    <label htmlFor="alamat">Address</label>
+                                    <textarea
+                                        id="alamat"
+                                        value={editFormData.alamat}
+                                        onChange={(e) => setEditFormData(prev => ({...prev, alamat: e.target.value}))}
+                                        rows="3"
+                                    />
+                                </div>
+                            </div>
+                            <div className="modal-footer">
+                                <button type="button" className="btn-cancel" onClick={handleCloseModal}>
+                                    Cancel
+                                </button>
+                                <button type="submit" className="btn-save" disabled={processing}>
+                                    {processing ? 'Saving...' : 'Save Changes'}
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
+
+            {/* Delete User Modal */}
+            {showDeleteModal && (
+                <div className="modal-overlay" onClick={handleCloseModal}>
+                    <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+                        <div className="modal-header">
+                            <h3>Delete User</h3>
+                            <button className="modal-close" onClick={handleCloseModal}>×</button>
+                        </div>
+                        <div className="modal-body">
+                            <p>Are you sure you want to delete this user?</p>
+                            <div className="user-info-preview">
+                                <strong>{selectedUser?.full_name}</strong><br/>
+                                <span>{selectedUser?.email}</span><br/>
+                                <span>@{selectedUser?.user_name}</span>
+                            </div>
+                            <p className="warning-text">This action cannot be undone.</p>
+                        </div>
+                        <div className="modal-footer">
+                            <button type="button" className="btn-cancel" onClick={handleCloseModal}>
+                                Cancel
+                            </button>
+                            <button 
+                                type="button" 
+                                className="btn-delete" 
+                                onClick={handleDeleteConfirm}
+                                disabled={processing}
+                            >
+                                {processing ? 'Deleting...' : 'Delete User'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     )
 }
