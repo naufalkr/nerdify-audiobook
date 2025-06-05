@@ -4,7 +4,7 @@ export const GlobalContext = createContext()
 
 export const GlobalProvider = ({ children }) => {
   const [currentAudio, setCurrentAudio] = useState({})
-  const [user, setUser] = useState(null) // Changed from "" to null
+  const [user, setUser] = useState(null)
 
   // Check for existing user session on app load
   useEffect(() => {
@@ -16,11 +16,10 @@ export const GlobalProvider = ({ children }) => {
         if (token && userData) {
           const parsedUser = JSON.parse(userData)
           console.log('🔄 Restoring user session:', parsedUser)
-          setUser(parsedUser) // Store full user object
+          setUser(parsedUser)
         }
       } catch (error) {
         console.error('❌ Error checking auth status:', error)
-        // Clear invalid data
         localStorage.removeItem('token')
         localStorage.removeItem('user')
       }
@@ -48,7 +47,8 @@ export const GlobalProvider = ({ children }) => {
   const logout = () => {
     localStorage.removeItem('token')
     localStorage.removeItem('user')
-    setUser(null) // Changed from "" to null
+    localStorage.removeItem('mockUser')
+    setUser(null)
     setCurrentAudio({})
   }
 
@@ -57,10 +57,10 @@ export const GlobalProvider = ({ children }) => {
     setCurrentAudio,
     user,
     setUser,
+    logout,
     isSuperAdmin,
     isAuthenticated,
-    getUserRole,
-    logout
+    getUserRole
   }
 
   return (

@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React from 'react'
 import { BrowserRouter, Switch, Route } from 'react-router-dom'
 
 // Import components
@@ -19,24 +19,14 @@ import { ProtectedRoute, SuperAdminRoute, UserRoute } from './components/Protect
 import AdminDashboard from './pages/Admin/Dashboard'
 import AdminAudiobooks from './pages/Admin/Audiobooks'
 
-// Import context
-import { GlobalContext } from './contexts'
+// Import context provider (not just the context)
+import { GlobalProvider } from './contexts'
 
 import './App.css'
 
 function App() {
-  const [currentAudio, setCurrentAudio] = useState({})
-  const [user, setUser] = useState("")
-
-  const contextValue = {
-    currentAudio,
-    setCurrentAudio,
-    user,
-    setUser
-  }
-
   return (
-    <GlobalContext.Provider value={contextValue}>
+    <GlobalProvider>
       <BrowserRouter>
         <Switch>
           {/* Public Auth routes */}
@@ -58,7 +48,7 @@ function App() {
 
           {/* User routes with sidebar layout */}
           <UserRoute path="/">
-            <div className="main-container" data-show-player={Boolean(currentAudio?.chapter?.Link)}>
+            <div className="main-container">
               <SideMenu />
               <Switch>
                 <Route exact path="/genre/:genre" component={GenreAudiobooks} />
@@ -72,7 +62,7 @@ function App() {
           </UserRoute>
         </Switch>
       </BrowserRouter>
-    </GlobalContext.Provider>
+    </GlobalProvider>
   )
 }
 

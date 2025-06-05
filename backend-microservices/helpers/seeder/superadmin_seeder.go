@@ -14,14 +14,18 @@ import (
 func SeedSuperAdminUser(db *gorm.DB) error {
 	log.Println("Seeding verified SUPERADMIN user...")
 
-	// Check if superadmin already exists
+	// Check if superadmin already exists with the new credentials
 	var existingUser model.User
-	result := db.Where("user_name = ?", "superadmin").First(&existingUser)
+	result := db.Where("user_name = ? OR email = ?", "SUPERADMIN", "superadmin@gmail.com").First(&existingUser)
 	if result.Error == nil {
-		log.Println("SUPERADMIN user already exists, skipping")
+		log.Printf("SUPERADMIN user already exists with ID: %s", existingUser.ID)
+		log.Printf("Existing user details:")
+		log.Printf("- Username: %s", existingUser.UserName)
+		log.Printf("- Email: %s", existingUser.Email)
+		log.Printf("- Full Name: %s", existingUser.FullName)
+		log.Printf("- Is Verified: %t", existingUser.IsVerified)
 		return nil
 	} else if result.Error != gorm.ErrRecordNotFound {
-		// Only log as error if it's not just "record not found"
 		log.Printf("Error checking for existing superadmin: %v", result.Error)
 		return result.Error
 	}
@@ -49,7 +53,7 @@ func SeedSuperAdminUser(db *gorm.DB) error {
 			return err
 		}
 	} else {
-		log.Println("Found existing SUPERADMIN role")
+		log.Printf("Found existing SUPERADMIN role with ID: %s", superadminRole.ID)
 	}
 
 	// Hash the password
@@ -59,29 +63,40 @@ func SeedSuperAdminUser(db *gorm.DB) error {
 		return err
 	}
 
-	// Create the superadmin user
+	// Create the superadmin user with custom data
 	superadminUser := model.User{
 		ID:              uuid.New(),
 		RoleID:          &superadminRole.ID,
-		UserName:        "superadmin",
-		Email:           "superadmin@example.com",
+		UserName:        "SUPERADMIN",
+		Email:           "superadmin@gmail.com",
 		Password:        hashedPassword,
-		FullName:        "Super Administrator",
-		Alamat:          "",
+		FullName:        "SUPERADMIN",
+		Alamat:          "SUPERADMIN",
+		Latitude:        -6.2088,
+		Longitude:       106.8456,
 		ProfileImageURL: "",
 		IsVerified:      true, // User is already verified
 		CreatedAt:       time.Now(),
 		UpdatedAt:       time.Now(),
 	}
 
-	log.Println("Creating SUPERADMIN user...")
+	log.Println("Creating SUPERADMIN user with custom credentials...")
 	if err := db.Create(&superadminUser).Error; err != nil {
 		log.Printf("Failed to create SUPERADMIN user: %v", err)
 		return err
 	}
-	log.Println("SUPERADMIN user created successfully")
 
-	log.Println("Successfully created verified SUPERADMIN user")
+	log.Println("✅ SUPERADMIN user created successfully!")
+	log.Printf("📋 SUPERADMIN Details:")
+	log.Printf("- ID: %s", superadminUser.ID)
+	log.Printf("- Username: %s", superadminUser.UserName)
+	log.Printf("- Email: %s", superadminUser.Email)
+	log.Printf("- Full Name: %s", superadminUser.FullName)
+	log.Printf("- Address: %s", superadminUser.Alamat)
+	log.Printf("- Location: %.4f, %.4f", superadminUser.Latitude, superadminUser.Longitude)
+	log.Printf("- Is Verified: %t", superadminUser.IsVerified)
+	log.Printf("- Role ID: %s", *superadminUser.RoleID)
+
 	return nil
 }
 
