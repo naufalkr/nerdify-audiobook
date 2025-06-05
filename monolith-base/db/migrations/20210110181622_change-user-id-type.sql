@@ -1,6 +1,0 @@
--- migrate:up
-ALTER TABLE PLAYSTATE ALTER COLUMN user_id  TYPE TEXT;
-
--- migrate:down
-ALTER TABLE PLAYSTATE ALTER COLUMN user_id  TYPE UUID;
-
