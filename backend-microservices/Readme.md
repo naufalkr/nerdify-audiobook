@@ -1,6 +1,6 @@
 # LecSens Backend
 
-Backend service for LecSens application built with Go and PostgreSQL.
+Backend service for Nerdify application built with Go and PostgreSQL.
 
 ## Prerequisites
 
@@ -12,11 +12,6 @@ Before you begin, ensure you have the following installed:
 
 ## Getting Started
 
-### Clone Repository
-```bash
-git clone <repository-url>
-cd be-lecsens
-```
 
 ### Environment Setup
 Create .env file in root directory:
@@ -26,7 +21,7 @@ DB_HOST=db
 DB_PORT=5432
 DB_USER=postgres
 DB_PASSWORD=
-DB_NAME=lecsens
+DB_NAME=audiobook
 JWT_SECRET=your-secret-key
 ```
 
