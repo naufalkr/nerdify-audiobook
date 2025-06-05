@@ -1,7 +1,8 @@
 import React, { useContext, useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { GlobalContext } from '../../contexts'
-import { getUserProfile, logoutUser } from '../../utils/api'
+import { logoutUser } from '../../utils/api'
+import UserRepository from '../../repositories/UserRepository'
 import { handlePromise } from '../../utils/promises'
 import './style.css'
 
@@ -16,9 +17,9 @@ function User(){
         try {
             // Call logout endpoint
             await logoutUser()
-            console.log('✅ Logout successful')
+            console.log('Logout successful')
         } catch (err) {
-            console.error('❌ Logout error:', err)
+            console.error('Logout error:', err)
             // Continue with logout even if API call fails
         } finally {
             // Clear local storage and state
@@ -37,31 +38,32 @@ function User(){
             // Check if token exists
             const token = localStorage.getItem('token')
             if (!token) {
-                console.log('🔍 No token found, user not logged in')
+                console.log('No token found, user not logged in')
                 return
             }
 
-            console.log('🔍 Token found, validating user session...')
+            console.log('Token found, validating user session...')
 
             // Check if user is already set from localStorage
             const savedUser = localStorage.getItem('user')
             if (savedUser && !user) {
                 try {
                     const userData = JSON.parse(savedUser)
-                    console.log('🔄 Restoring user from localStorage:', userData)
+                    console.log('Restoring user from localStorage:', userData)
                     setUser(userData) // Store full user object
                     setUserProfile(userData)
                     return
                 } catch (e) {
-                    console.error('❌ Error parsing saved user data:', e)
+                    console.error('Error parsing saved user data:', e)
                 }
             }
 
-            // Get fresh user profile from API
-            const [response, err] = await handlePromise(getUserProfile())
+            // Get fresh user profile using UserRepository
+            console.log('UserComponent: Fetching user profile via UserRepository...')
+            const [response, err] = await handlePromise(UserRepository.getCurrentUser())
             
             if(err){
-                console.error('❌ Profile fetch failed:', err)
+                console.error('UserRepository profile fetch failed:', err)
                 // Token might be expired, remove it
                 localStorage.removeItem('token')
                 localStorage.removeItem('user')
@@ -71,15 +73,10 @@ function User(){
                 return
             }
 
-            console.log('✅ User profile fetched:', response.data)
+            console.log('UserRepository profile fetched:', response)
             
-            // Handle BE-LecSens response structure
-            let userData = null
-            if (response.data.data) {
-                userData = response.data.data
-            } else {
-                userData = response.data
-            }
+            // Handle UserRepository response
+            let userData = response
             
             // Update user state and save to localStorage
             setUser(userData) // Store full user object

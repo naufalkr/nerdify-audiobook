@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useContext } from 'react'
 import { useHistory } from 'react-router-dom'
-import { getUserProfile } from '../../utils/api'
+import UserRepository from '../../repositories/UserRepository'
 import { GlobalContext } from '../../contexts'
 import './profile.css'
 
@@ -26,15 +26,19 @@ function Profile() {
     const loadProfile = async () => {
         try {
             setLoading(true)
-            const response = await getUserProfile()
+            console.log('Profile: Loading user profile via UserRepository...')
             
-            if (response.data.data) {
-                setProfile(response.data.data)
+            // Use UserRepository instead of direct API call
+            const userData = await UserRepository.getCurrentUser()
+            
+            if (userData) {
+                console.log('Profile: UserRepository profile loaded:', userData)
+                setProfile(userData)
             } else {
-                setProfile(response.data)
+                throw new Error('No profile data received')
             }
         } catch (err) {
-            console.error('Error loading profile:', err)
+            console.error('Profile: Error loading profile via UserRepository:', err)
             setError('Failed to load profile')
         } finally {
             setLoading(false)
@@ -61,7 +65,7 @@ function Profile() {
             <div className="profile-container">
                 <div className="profile-loading">
                     <div className="loading-spinner"></div>
-                    <p>Loading profile...</p>
+                    <p>Loading profile via UserRepository...</p>
                 </div>
             </div>
         )
@@ -73,6 +77,9 @@ function Profile() {
                 <div className="profile-error">
                     <h2>Error Loading Profile</h2>
                     <p>{error || 'Profile not found'}</p>
+                    <button onClick={loadProfile} className="retry-btn">
+                        Retry with UserRepository
+                    </button>
                     <button onClick={() => history.push('/')} className="back-btn">
                         Go Back Home
                     </button>
@@ -92,6 +99,7 @@ function Profile() {
                         Back
                     </button>
                     <h1>Profile Settings</h1>
+                    <small style={{ color: '#94a3b8' }}>Powered by UserRepository Pattern</small>
                 </div>
 
                 <div className="profile-content">

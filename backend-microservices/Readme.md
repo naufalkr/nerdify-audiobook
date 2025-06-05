@@ -1,4 +1,4 @@
-# LecSens Backend
+# Nerdify Backend
 
 Backend service for Nerdify application built with Go and PostgreSQL.
 

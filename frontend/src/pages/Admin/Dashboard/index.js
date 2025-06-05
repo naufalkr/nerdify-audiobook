@@ -1,6 +1,7 @@
 import React, { useContext, useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { GlobalContext } from '../../../contexts'
+import AdminRepository from '../../../repositories/AdminRepository'
 import './admin.css'
 
 function AdminDashboard() {
@@ -12,23 +13,55 @@ function AdminDashboard() {
         activeSessions: 0,
         systemStatus: 'operational'
     })
+    const [loading, setLoading] = useState(true)
+    const [error, setError] = useState(null)
 
     useEffect(() => {
         document.title = "Admin Dashboard | The Book Hub"
-        
-        // Simulate loading stats (replace with actual API calls)
-        const loadStats = () => {
-            // This would be replaced with actual API calls
-            setStats({
-                totalAudiobooks: 127,
-                totalUsers: 1453,
-                activeSessions: 89,
-                systemStatus: 'operational'
-            })
-        }
-        
         loadStats()
     }, [])
+
+    const loadStats = async () => {
+        try {
+            setLoading(true)
+            setError(null)
+            console.log('AdminDashboard: Loading dashboard statistics...')
+            
+            // Use Repository Pattern to fetch real data
+            const systemStats = await AdminRepository.getRealTimeStats()
+            
+            setStats({
+                totalAudiobooks: systemStats.totalAudiobooks || 0,
+                totalUsers: systemStats.totalUsers || 0,
+                activeSessions: systemStats.activeSessions || 0,
+                systemStatus: systemStats.systemStatus || 'operational',
+                lastUpdated: systemStats.lastUpdated,
+                userGrowthRate: systemStats.userGrowthRate || 0,
+                newUsersToday: systemStats.newUsersToday || 0
+            })
+
+            console.log('AdminDashboard: Statistics loaded successfully')
+        } catch (error) {
+            console.error('AdminDashboard: Failed to load statistics:', error)
+            setError('Failed to load dashboard statistics')
+            
+            // Fallback to basic stats if repository fails
+            setStats({
+                totalAudiobooks: 0,
+                totalUsers: 0,
+                activeSessions: 0,
+                systemStatus: 'unknown'
+            })
+        } finally {
+            setLoading(false)
+        }
+    }
+
+    const handleRefreshStats = () => {
+        console.log('AdminDashboard: Manually refreshing statistics...')
+        AdminRepository.clearCache()
+        loadStats()
+    }
 
     const handleLogout = () => {
         try {
@@ -56,6 +89,25 @@ function AdminDashboard() {
         if (hour < 12) return 'Good Morning'
         if (hour < 18) return 'Good Afternoon'
         return 'Good Evening'
+    }
+
+    const getStatusIcon = (status) => {
+        switch (status) {
+            case 'operational':
+                return '✅'
+            case 'degraded':
+                return '⚠️'
+            case 'down':
+                return '❌'
+            default:
+                return '❓'
+        }
+    }
+
+    const formatLastUpdated = (timestamp) => {
+        if (!timestamp) return 'Never'
+        const date = new Date(timestamp)
+        return date.toLocaleTimeString()
     }
 
     return (
@@ -124,7 +176,50 @@ function AdminDashboard() {
                     <div className="admin-page-header">
                         <h1>📊 Dashboard Overview</h1>
                         <p>Monitor your platform's performance and manage resources</p>
+                        <div style={{ marginTop: '1rem' }}>
+                            <button 
+                                onClick={handleRefreshStats}
+                                className="admin-btn admin-btn-secondary"
+                                disabled={loading}
+                                style={{ marginRight: '1rem' }}
+                            >
+                                {loading ? 'Loading...' : '🔄 Refresh Data'}
+                            </button>
+                            {stats.lastUpdated && (
+                                <small style={{ color: '#94a3b8' }}>
+                                    Last updated: {formatLastUpdated(stats.lastUpdated)}
+                                </small>
+                            )}
+                        </div>
                     </div>
+
+                    {/* Error State */}
+                    {error && (
+                        <div style={{
+                            background: 'rgba(239, 68, 68, 0.1)',
+                            border: '1px solid rgba(239, 68, 68, 0.3)',
+                            borderRadius: '8px',
+                            padding: '1rem',
+                            marginBottom: '2rem',
+                            color: '#ef4444'
+                        }}>
+                            <strong>Error:</strong> {error}
+                        </div>
+                    )}
+
+                    {/* Loading State */}
+                    {loading && (
+                        <div style={{
+                            background: 'rgba(59, 130, 246, 0.1)',
+                            border: '1px solid rgba(59, 130, 246, 0.3)',
+                            borderRadius: '8px',
+                            padding: '1rem',
+                            marginBottom: '2rem',
+                            color: '#3b82f6'
+                        }}>
+                            Loading dashboard statistics...
+                        </div>
+                    )}
 
                     <div className="admin-stats-grid">
                         <div className="admin-stat-card">
@@ -136,6 +231,11 @@ function AdminDashboard() {
                             <h3>👥 Total Users</h3>
                             <div className="stat-number">{stats.totalUsers}</div>
                             <p>Registered platform users</p>
+                            {stats.newUsersToday > 0 && (
+                                <small style={{ color: '#10b981' }}>
+                                    +{stats.newUsersToday} today
+                                </small>
+                            )}
                         </div>
                         <div className="admin-stat-card">
                             <h3>🎧 Active Sessions</h3>
@@ -145,9 +245,11 @@ function AdminDashboard() {
                         <div className="admin-stat-card">
                             <h3>⚡ System Status</h3>
                             <div className="stat-number">
-                                {stats.systemStatus === 'operational' ? '✅' : '⚠️'}
+                                {getStatusIcon(stats.systemStatus)}
                             </div>
-                            <p>All systems operational</p>
+                            <p style={{ textTransform: 'capitalize' }}>
+                                System is {stats.systemStatus}
+                            </p>
                         </div>
                     </div>
 

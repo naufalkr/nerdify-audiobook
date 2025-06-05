@@ -18,6 +18,8 @@ import { ProtectedRoute, SuperAdminRoute, UserRoute } from './components/Protect
 // Admin components
 import AdminDashboard from './pages/Admin/Dashboard'
 import AdminAudiobooks from './pages/Admin/Audiobooks'
+import AdminUsers from './pages/Admin/Users'
+
 
 // Import context provider (not just the context)
 import { GlobalProvider } from './contexts'
@@ -44,6 +46,9 @@ function App() {
           </SuperAdminRoute>
           <SuperAdminRoute exact path="/admin/audiobooks">
             <AdminAudiobooks />
+          </SuperAdminRoute>
+          <SuperAdminRoute exact path="/admin/users">
+            <AdminUsers />
           </SuperAdminRoute>
 
           {/* User routes with sidebar layout */}
