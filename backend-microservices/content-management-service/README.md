@@ -1,78 +1,150 @@
-# Nerdify Backend
+# Content Management Service
 
-Backend content-management-service for Nerdify application built with Go and PostgreSQL.
+Content Management Service for managing audiobook data including categories, audiobooks, metadata, and analytics.
 
-## Prerequisites
+## Tech Stack
 
-Before you begin, ensure you have the following installed:
-- Go (version 1.22 or later)
-- Docker & Docker Compose
-- PostgreSQL (if running without Docker)
-- Git
+- **Language**: Go 1.21
+- **Framework**: Gin (HTTP Router)
+- **Database**: PostgreSQL
+- **ORM**: GORM
+- **Authentication**: External Auth Service (localhost:3160)
 
-## Getting Started
+## Database Schema
 
+Main tables:
+- `categories` - Audiobook categories
+- `audiobooks` - Main audiobook data
+- `metadata` - Audiobook metadata
+- `audiobook_analytics` - User activity tracking
 
-### Environment Setup
-Create .env file in root directory:
+## Quick Start
+
+### 1. Navigate to Service Directory
 ```bash
-PORT=3161
-DB_HOST=db
+cd d:\Kampus\SEMESTER 6\PPL\nerdify-audiobook\backend-microservices\content-management-service
+```
+
+### 2. Install Dependencies
+```bash
+go mod download
+# or
+go mod tidy
+```
+
+### 3. Database Setup
+1. **Ensure PostgreSQL is running**
+2. **Create database**: `nerdify-content-management`
+3. **Setup .env file**:
+```env
+PORT=3163
+DB_HOST=localhost
 DB_PORT=5432
 DB_USER=postgres
-DB_PASSWORD=
+DB_PASSWORD=your_password
 DB_NAME=nerdify-content-management
 JWT_SECRET=your-secret-key
 ```
 
-### Run Locally (Without Docker)
-
-1. Install dependencies:
-    ```bash
-    go mod download
-    ```
-2. Update database connection in `.env`:
-    ```bash
-    DB_HOST=localhost
-    ```
-3. Run the application:
-    ```bash
-    # Kalo baru pertama kali run, seed ke db nya:
-    go run main.go -seed
-
-    # Run biasa
-    go run main.go
-    ```
-
-## Service Integration
-
-### External API for Role Validation
-
-This service provides external APIs for validating user roles (including SuperAdmin) from other microservices:
-
-#### Validating SuperAdmin Role
-
+### 4. Run Database Migration & Seeding
 ```bash
-GET /api/external/auth/validate-superadmin
+go run cmd/seeder/main.go
 ```
 
-**Headers:**
-```
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
-X-API-Key: your-api-key
+### 5. Start Service
+```bash
+go run main.go
 ```
 
-**Response:**
+Service runs on **port 3163**.
+
+## API Endpoints
+
+### Public Endpoints
+- `GET /api/health` - Health check
+- `GET /api/public/audiobooks` - List audiobooks
+- `GET /api/public/audiobooks/:id` - Get audiobook
+- `GET /api/public/audiobooks/search?q=query` - Search audiobooks
+- `GET /api/public/categories` - List categories
+
+### Admin Endpoints (Requires SUPERADMIN)
+- `POST /api/admin/audiobooks` - Create audiobook
+- `PUT /api/admin/audiobooks/:id` - Update audiobook
+- `DELETE /api/admin/audiobooks/:id` - Delete audiobook
+- `POST /api/admin/categories` - Create category
+- `PUT /api/admin/categories/:id` - Update category
+
+### Query Parameters
+- `?page=1` - Page number
+- `?limit=20` - Items per page (max: 100)
+- `?q=search` - Search query
+
+## Authentication
+
+### Headers
+```bash
+Authorization: Bearer <jwt_token>
+```
+
+### Role Requirements
+- **Public endpoints**: No auth required
+- **Admin endpoints**: SUPERADMIN role required
+
+## Response Format
+
+### Success
 ```json
 {
-  "valid": true,
-  "userID": "user-uuid",
-  "userRole": "SUPERADMIN",
-  "isSuperAdmin": true
+  "message": "Success",
+  "data": { ... }
 }
 ```
 
-For complete documentation on external APIs, see:
-- [External API Documentation](/docs/external_api_guide.md)
-- [SuperAdmin Validation API](/docs/external_api_superadmin_validation.md)
-- [Role-Based API Routes](/docs/role_based_api_routes.md)
+### List with Pagination
+```json
+{
+  "data": [...],
+  "pagination": {
+    "page": 1,
+    "limit": 20,
+    "total": 100,
+    "total_pages": 5
+  }
+}
+```
+
+### Error
+```json
+{
+  "error": "Error message"
+}
+```
+
+## Seeder Commands
+
+```bash
+# Run migration + seeding
+go run cmd/seeder/main.go
+
+# Migration only
+go run cmd/seeder/main.go -migrate
+
+# Seeding only
+go run cmd/seeder/main.go -seed
+
+# Show statistics
+go run cmd/seeder/main.go -stats
+
+# Clear data
+go run cmd/seeder/main.go -clear
+```
+
+## Build & Deploy
+
+```bash
+# Build
+go build -o content-service main.go
+
+# Run built binary
+./content-service
+```
