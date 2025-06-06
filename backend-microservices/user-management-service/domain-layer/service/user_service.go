@@ -146,45 +146,45 @@ func (s *UserService) ListUsers(ctx context.Context, req dto.UserListRequest) ([
 // Register creates a new user, assigns USER role, and sends verification email with OTP and link
 func (s *UserService) Register(ctx context.Context, req dto.UserRegisterRequest) (dto.UserProfileResponse, error) {
 	if !utils.IsValidEmail(req.Email) {
-		return dto.UserProfileResponse{}, dto.ErrInvalidEmail
-	}
+        return dto.UserProfileResponse{}, dto.ErrInvalidEmail
+    }
 
-	exists, _ := s.repo.ExistsByEmailOrUsername(ctx, nil, req.Email, req.UserName)
-	if exists {
-		return dto.UserProfileResponse{}, dto.ErrUserAlreadyExist
-	}
+    exists, _ := s.repo.ExistsByEmailOrUsername(ctx, nil, req.Email, req.UserName)
+    if exists {
+        return dto.UserProfileResponse{}, dto.ErrUserAlreadyExist
+    }
 
-	hashedPwd, err := utils.HashPassword(req.Password)
-	if err != nil {
-		return dto.UserProfileResponse{}, err
-	}
+    hashedPwd, err := utils.HashPassword(req.Password)
+    if err != nil {
+        return dto.UserProfileResponse{}, err
+    }
 
-	role, err := s.roleRepo.FindByName(ctx, "USER")
-	if err != nil {
-		return dto.UserProfileResponse{}, err
-	}
+    role, err := s.roleRepo.FindByName(ctx, "USER")
+    if err != nil {
+        return dto.UserProfileResponse{}, err
+    }
 
 	// Initialize with current time to avoid nil pointers
 	now := time.Now()
 
 	user := entity.User{
-		ID:                         uuid.New(),
-		Email:                      req.Email,
-		UserName:                   req.UserName,
-		Password:                   hashedPwd,
-		FullName:                   req.FullName,
-		Alamat:                     req.Alamat,
-		Latitude:                   req.Latitude,
-		Longitude:                  req.Longitude,
-		ProfileImageURL:            "",       // Set to empty string as ProfileImageURL doesn't exist in dto.UserRegisterRequest
-		RoleID:                     &role.ID, // Convert uuid.UUID to *uuid.UUID
-		IsVerified:                 false,
-		OTPCreatedAt:               &now, // Initialize to avoid nil pointer dereference
-		VerificationTokenCreatedAt: &now, // Initialize to avoid nil pointer dereference
-		CreatedAt:                  time.Now(),
-		UpdatedAt:                  time.Now(),
-		Status:                     "pending", // Set default status
-	}
+        ID:                         uuid.New(),
+        Email:                      req.Email,
+        UserName:                   req.UserName,
+        Password:                   hashedPwd,
+        FullName:                   req.FullName,
+        Alamat:                     req.Alamat,
+        Latitude:                   req.Latitude,
+        Longitude:                  req.Longitude,
+        ProfileImageURL:            "",
+        RoleID:                     &role.ID,
+        IsVerified:                 true, // AUTO VERIFIED - TIDAK PERLU OTP
+        OTPCreatedAt:               &now,
+        VerificationTokenCreatedAt: &now,
+        CreatedAt:                  time.Now(),
+        UpdatedAt:                  time.Now(),
+        Status:                     "active", // Langsung active
+    }
 
 	createdUser, err := s.repo.CreateUser(ctx, nil, user)
 	if err != nil {
