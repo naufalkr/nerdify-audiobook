@@ -1,6 +1,6 @@
 # Nerdify Backend
 
-Backend service for Nerdify application built with Go and PostgreSQL.
+Backend content-management-service for Nerdify application built with Go and PostgreSQL.
 
 ## Prerequisites
 
@@ -21,7 +21,7 @@ DB_HOST=db
 DB_PORT=5432
 DB_USER=postgres
 DB_PASSWORD=
-DB_NAME=audiobook
+DB_NAME=nerdify-content-management
 JWT_SECRET=your-secret-key
 ```
 
@@ -55,33 +55,6 @@ JWT_SECRET=your-secret-key
     go run main.go 
     ```
 
-## Service Integration
-
-### External API for Role Validation
-
-This service provides external APIs for validating user roles (including SuperAdmin) from other microservices:
-
-#### Validating SuperAdmin Role
-
-```bash
-GET /api/external/auth/validate-superadmin
-```
-
-**Headers:**
-```
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
-X-API-Key: your-api-key
-```
-
-**Response:**
-```json
-{
-  "valid": true,
-  "userID": "user-uuid",
-  "userRole": "SUPERADMIN",
-  "isSuperAdmin": true
-}
-```
 
 For complete documentation on external APIs, see:
 - [External API Documentation](/docs/external_api_guide.md)
