@@ -16,7 +16,7 @@ Before you begin, ensure you have the following installed:
 ### Environment Setup
 Create .env file in root directory:
 ```bash
-PORT=3160
+PORT=3161
 DB_HOST=db
 DB_PORT=5432
 DB_USER=postgres
@@ -24,21 +24,6 @@ DB_PASSWORD=
 DB_NAME=nerdify-content-management
 JWT_SECRET=your-secret-key
 ```
-
-### Run with Docker
-
-1. Build and start containers:
-    ```bash
-    docker-compose up --build
-    ```
-2. Stop containers:
-    ```bash
-    docker-compose down
-    ```
-3. Remove volumes along with containers:
-    ```bash
-    docker-compose down -v
-    ```
 
 ### Run Locally (Without Docker)
 
@@ -52,9 +37,40 @@ JWT_SECRET=your-secret-key
     ```
 3. Run the application:
     ```bash
-    go run main.go 
+    # Kalo baru pertama kali run, seed ke db nya:
+    go run main.go -seed
+
+    # Run biasa
+    go run main.go
     ```
 
+## Service Integration
+
+### External API for Role Validation
+
+This service provides external APIs for validating user roles (including SuperAdmin) from other microservices:
+
+#### Validating SuperAdmin Role
+
+```bash
+GET /api/external/auth/validate-superadmin
+```
+
+**Headers:**
+```
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+X-API-Key: your-api-key
+```
+
+**Response:**
+```json
+{
+  "valid": true,
+  "userID": "user-uuid",
+  "userRole": "SUPERADMIN",
+  "isSuperAdmin": true
+}
+```
 
 For complete documentation on external APIs, see:
 - [External API Documentation](/docs/external_api_guide.md)

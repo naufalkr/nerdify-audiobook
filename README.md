@@ -57,11 +57,11 @@ This project implements several design patterns as part of Software Engineering 
 ```env
 DB_HOST=localhost
 DB_PORT=5432
-DB_NAME=audiobook
+DB_NAME=user-management, catalog-services (tergantung service)
 DB_USER=postgres
 DB_PASSWORD=your_password
 JWT_SECRET=your_secret
-PORT=3160
+PORT=3160, 3161, 3162, 3163 (tergantung service)
 ```
 
 ### Frontend (.env)
@@ -75,6 +75,11 @@ REACT_APP_API_BASE_URL=http://localhost:3160
 cd backend-microservice
 go mod download
 cp .env.example .env  # Configure database settings
+
+# Kalo baru pertama kali run, seed ke db nya:
+go run main.go -seed
+
+# Run biasa
 go run main.go
 ```
 Backend runs on `http://localhost:3160`
@@ -86,6 +91,17 @@ npm install
 cp .env.example .env  # Set REACT_APP_USE_REAL_API=true
 npm start
 ```
+
+## Authentication
+### Superadmin
+Username: superadmin@gmail.com
+Password: superadmin123
+
+### User
+Username: user3@example.com
+password: password123
+
+
 Frontend runs on `http://localhost:3000`
 
 ### Docker (Alternative)
