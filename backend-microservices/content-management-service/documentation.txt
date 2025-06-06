@@ -1,0 +1,144 @@
+Complete API Endpoints - Content Management Service
+Base URL: http://localhost:3163
+
+
+========================================================
+Health Check
+GET http://localhost:3163/health
+========================================================
+
+========================================================
+Authors
+GET http://localhost:3163/api/v1/authors
+GET http://localhost:3163/api/v1/authors/:id
+GET http://localhost:3163/api/v1/authors/search?q=name
+POST http://localhost:3163/api/v1/authors (SUPERADMIN only)
+{
+  "name": "Author Name"
+}
+PUT http://localhost:3163/api/v1/authors/:id (SUPERADMIN only)
+{
+  "name": "Updated Author Name"
+}
+DELETE http://localhost:3163/api/v1/authors/:id (SUPERADMIN only)
+========================================================
+
+
+========================================================
+Readers
+GET http://localhost:3163/api/v1/readers
+GET http://localhost:3163/api/v1/readers/:id
+GET http://localhost:3163/api/v1/readers/search?q=name
+POST http://localhost:3163/api/v1/readers (SUPERADMIN only)
+{
+  "name": "Reader Name"
+}
+PUT http://localhost:3163/api/v1/readers/:id (SUPERADMIN only)
+{
+  "name": "Updated Reader Name"
+}
+DELETE http://localhost:3163/api/v1/readers/:id (SUPERADMIN only)
+========================================================
+
+
+========================================================
+Genres
+GET http://localhost:3163/api/v1/genres
+GET http://localhost:3163/api/v1/genres/:id
+GET http://localhost:3163/api/v1/genres/search?q=name
+POST http://localhost:3163/api/v1/genres (SUPERADMIN only)
+{
+  "name": "Genre Name"
+}
+PUT http://localhost:3163/api/v1/genres/:id (SUPERADMIN only)
+{
+  "name": "Updated Genre Name"
+}
+DELETE http://localhost:3163/api/v1/genres/:id (SUPERADMIN only)
+========================================================
+
+
+========================================================
+Audiobooks
+GET http://localhost:3163/api/v1/audiobooks
+GET http://localhost:3163/api/v1/audiobooks/:id
+GET http://localhost:3163/api/v1/audiobooks/search?q=title
+POST http://localhost:3163/api/v1/audiobooks (SUPERADMIN only)
+{
+  "title": "Audiobook Title",
+  "author_id": 1,
+  "reader_id": 1,
+  "description": "Book description",
+  "image_url": "https://example.com/cover.jpg",
+  "language": "English",
+  "year_of_publishing": 2024,
+  "total_duration": "10 hr 23 min",
+  "genre_ids": [1, 2, 3]
+}
+PUT http://localhost:3163/api/v1/audiobooks/:id (SUPERADMIN only)
+{
+  "title": "Updated Title",
+  "author_id": 1,
+  "reader_id": 1,
+  "description": "Updated description",
+  "image_url": "https://example.com/new-cover.jpg",
+  "language": "English",
+  "year_of_publishing": 2024,
+  "total_duration": "12 hr 45 min",
+  "genre_ids": [1, 3, 4]
+}
+DELETE http://localhost:3163/api/v1/audiobooks/:id (SUPERADMIN only)
+POST http://localhost:3163/api/v1/audiobooks/:id/genres (SUPERADMIN only)
+{
+  "genre_ids": [1, 2, 3]
+}
+DELETE http://localhost:3163/api/v1/audiobooks/:id/genres/:genre_id (SUPERADMIN only)
+========================================================
+
+
+========================================================
+Tracks
+GET http://localhost:3163/api/v1/tracks
+GET http://localhost:3163/api/v1/tracks/:id
+GET http://localhost:3163/api/v1/tracks/audiobook/:audiobook_id
+POST http://localhost:3163/api/v1/tracks (SUPERADMIN only)
+{
+  "audiobook_id": 1,
+  "title": "Chapter 01",
+  "url": "https://example.com/audio/chapter01.mp3",
+  "duration": "00:04:44"
+}
+PUT http://localhost:3163/api/v1/tracks/:id (SUPERADMIN only)
+{
+  "audiobook_id": 1,
+  "title": "Updated Chapter 01",
+  "url": "https://example.com/audio/updated-chapter01.mp3",
+  "duration": "00:05:30"
+}
+DELETE http://localhost:3163/api/v1/tracks/:id (SUPERADMIN only)
+========================================================
+
+
+========================================================
+Users
+GET http://localhost:3163/api/v1/users (SUPERADMIN only)
+GET http://localhost:3163/api/v1/users/:id (SUPERADMIN only)
+POST http://localhost:3163/api/v1/users (SUPERADMIN only)
+{
+  "id": "user-uuid-here",
+  "role": "SUPERADMIN"
+}
+PUT http://localhost:3163/api/v1/users/:id (SUPERADMIN only)
+{
+  "role": "SUPERADMIN"
+}
+DELETE http://localhost:3163/api/v1/users/:id (SUPERADMIN only)
+========================================================
+
+
+========================================================
+Analytics
+GET http://localhost:3163/api/v1/analytics (SUPERADMIN only)
+GET http://localhost:3163/api/v1/analytics/:id (SUPERADMIN only)
+GET http://localhost:3163/api/v1/analytics/audiobook/:audiobook_id (SUPERADMIN only)
+========================================================

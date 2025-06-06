@@ -5,6 +5,7 @@ import (
 	"content-management-service/data_layer/entity"
 	"content-management-service/data_layer/repository"
 	"errors"
+	"fmt"
 
 	"gorm.io/gorm"
 )
@@ -14,6 +15,8 @@ type AudiobookService struct {
 	authorRepo    repository.AuthorRepositoryInterface
 	readerRepo    repository.ReaderRepositoryInterface
 	genreRepo     repository.GenreRepositoryInterface
+	trackRepo     repository.TrackRepositoryInterface
+	analyticsRepo repository.AnalyticsRepositoryInterface
 }
 
 func NewAudiobookService(
@@ -21,12 +24,16 @@ func NewAudiobookService(
 	authorRepo repository.AuthorRepositoryInterface,
 	readerRepo repository.ReaderRepositoryInterface,
 	genreRepo repository.GenreRepositoryInterface,
+	trackRepo repository.TrackRepositoryInterface,
+	analyticsRepo repository.AnalyticsRepositoryInterface,
 ) *AudiobookService {
 	return &AudiobookService{
 		audiobookRepo: audiobookRepo,
 		authorRepo:    authorRepo,
 		readerRepo:    readerRepo,
 		genreRepo:     genreRepo,
+		trackRepo:     trackRepo,
+		analyticsRepo: analyticsRepo,
 	}
 }
 
@@ -195,6 +202,7 @@ func (s *AudiobookService) UpdateAudiobook(id uint, req dto.UpdateAudiobookReque
 
 // DeleteAudiobook deletes an audiobook
 func (s *AudiobookService) DeleteAudiobook(id uint) error {
+	// Check if audiobook exists
 	_, err := s.audiobookRepo.GetByID(id)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -203,7 +211,29 @@ func (s *AudiobookService) DeleteAudiobook(id uint) error {
 		return err
 	}
 
-	return s.audiobookRepo.Delete(id)
+	// ✅ Clean up all related data before deleting audiobook
+
+	// 1. Remove all genre associations
+	if err := s.audiobookRepo.RemoveAllGenres(id); err != nil {
+		return fmt.Errorf("failed to remove genre associations: %v", err)
+	}
+
+	// 2. Delete all tracks for this audiobook
+	if err := s.trackRepo.DeleteByAudiobookID(id); err != nil {
+		return fmt.Errorf("failed to delete tracks: %v", err)
+	}
+
+	// 3. Delete all analytics records for this audiobook
+	if err := s.analyticsRepo.DeleteByAudiobookID(id); err != nil {
+		return fmt.Errorf("failed to delete analytics: %v", err)
+	}
+
+	// 4. Finally delete the audiobook itself
+	if err := s.audiobookRepo.Delete(id); err != nil {
+		return fmt.Errorf("failed to delete audiobook: %v", err)
+	}
+
+	return nil
 }
 
 // SearchAudiobooks searches audiobooks by title

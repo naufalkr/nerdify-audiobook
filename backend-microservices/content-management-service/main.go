@@ -52,7 +52,14 @@ func main() {
 	authorService := service.NewAuthorService(authorRepo)
 	readerService := service.NewReaderService(readerRepo)
 	genreService := service.NewGenreService(genreRepo)
-	audiobookService := service.NewAudiobookService(audiobookRepo, authorRepo, readerRepo, genreRepo)
+	audiobookService := service.NewAudiobookService(
+		audiobookRepo,
+		authorRepo,
+		readerRepo,
+		genreRepo,
+		trackRepo,     // Add trackRepo
+		analyticsRepo, // Add analyticsRepo
+	)
 	trackService := service.NewTrackService(trackRepo)
 	userService := service.NewUserService(userRepo)
 	analyticsService := service.NewAnalyticsService(analyticsRepo)
@@ -93,7 +100,7 @@ func main() {
 	// Get port from environment or use default
 	port := os.Getenv("SERVER_PORT")
 	if port == "" {
-		port = "3160" // default port
+		port = "3163" // Update default port to 3163 (sesuai documentation)
 	}
 
 	log.Printf("Server starting on port %s...", port)

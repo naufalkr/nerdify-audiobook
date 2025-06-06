@@ -21,6 +21,7 @@ type AudiobookRepositoryInterface interface {
 	GetByGenreID(genreID uint, offset, limit int) ([]entity.Audiobook, int64, error)
 	AssignGenres(audiobookID uint, genreIDs []uint) error
 	RemoveGenres(audiobookID uint, genreIDs []uint) error
+	RemoveAllGenres(audiobookID uint) error
 }
 
 // AudiobookRepository implements AudiobookRepositoryInterface
@@ -218,4 +219,15 @@ func (r *AudiobookRepository) RemoveGenres(audiobookID uint, genreIDs []uint) er
 	}
 
 	return r.db.Model(&audiobook).Association("Genres").Delete(genres)
+}
+
+// RemoveAllGenres removes all genres from an audiobook
+func (r *AudiobookRepository) RemoveAllGenres(audiobookID uint) error {
+    var audiobook entity.Audiobook
+    if err := r.db.First(&audiobook, audiobookID).Error; err != nil {
+        return err
+    }
+
+    // Clear all genre associations
+    return r.db.Model(&audiobook).Association("Genres").Clear()
 }
