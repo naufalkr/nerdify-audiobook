@@ -29,6 +29,7 @@ body{
 
   box-sizing: border-box;
   overflow-y: scroll;
+  overflow-x: hidden; /* Prevent horizontal scroll */
 }
 
 .main-container[data-show-player="false"] .player{

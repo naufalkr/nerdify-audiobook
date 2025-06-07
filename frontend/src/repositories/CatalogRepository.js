@@ -120,11 +120,11 @@ class CatalogRepository {
 
     /**
      * Get audiobook by ID
-     * @param {number} id - Audiobook ID
+     * @param {number} audiobookId - Audiobook ID
      */
-    static async getAudiobookById(id) {
+    static async getAudiobookById(audiobookId) {
         try {
-            const response = await axios.get(`${BASE_URL}/audiobooks/${id}`)
+            const response = await axios.get(`${BASE_URL}/audiobooks/${audiobookId}`)
             
             return {
                 success: true,

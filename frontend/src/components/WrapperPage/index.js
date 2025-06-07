@@ -1,11 +1,14 @@
 import React from 'react'
 
-import User from '../User'
-
-function WrapperPage({ children }){
-    return(
-        <div className="rest-page">
-            <User/>
+function WrapperPage({ children, style = {} }) {
+    return (
+        <div 
+            className="rest-page" 
+            style={{
+                // Ensure no overflow properties are added
+                ...style
+            }}
+        >
             {children}
         </div>
     )
