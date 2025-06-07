@@ -3,6 +3,7 @@ export { default as AdminRepository } from './AdminRepository'
 export { default as SystemRepository } from './SystemRepository'
 export { default as UserRepository } from './UserRepository'
 export { default as AudiobooksRepository } from './AudiobooksRepository'
+export { default as CatalogRepository } from './CatalogRepository'
 
 // Helper function to create repository instances with custom config
 export const createRepositoryWithConfig = (RepositoryClass, config = {}) => {
