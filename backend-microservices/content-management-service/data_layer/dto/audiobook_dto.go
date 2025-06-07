@@ -43,15 +43,15 @@ type AudiobookResponse struct {
 
 // AudiobookListResponse represents the response for audiobook list
 type AudiobookListResponse struct {
-	ID               uint            `json:"id"`
-	Title            string          `json:"title"`
-	Author           AuthorResponse  `json:"author"`
-	Reader           ReaderResponse  `json:"reader"`
-	ImageURL         string          `json:"image_url"`
-	Language         string          `json:"language"`
-	YearOfPublishing int             `json:"year_of_publishing"`
-	TotalDuration    string          `json:"total_duration"`
-	Genres           []GenreResponse `json:"genres"`
+	ID                uint              `json:"id"`
+	Title             string            `json:"title"`
+	Author            *AuthorResponse   `json:"author,omitempty"`
+	Reader            *ReaderResponse   `json:"reader,omitempty"`
+	ImageURL          string            `json:"image_url"`
+	Language          string            `json:"language"`
+	YearOfPublishing  int               `json:"year_of_publishing"`
+	TotalDuration     string            `json:"total_duration"`
+	Genres            []GenreResponse   `json:"genres"`
 }
 
 // AudiobookFilter represents filtering options for audiobooks

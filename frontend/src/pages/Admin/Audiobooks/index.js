@@ -30,6 +30,21 @@ function AdminAudiobooks() {
         genre_ids: []
     })
 
+    // Edit form states
+    const [showEditModal, setShowEditModal] = useState(false)
+    const [editing, setEditing] = useState(false)
+    const [editingAudiobook, setEditingAudiobook] = useState(null)
+    const [editFormData, setEditFormData] = useState({
+        title: '',
+        author_id: '',
+        description: '',
+        image_url: '',
+        language: 'English',
+        year_of_publishing: new Date().getFullYear(),
+        total_duration: '',
+        genre_ids: []
+    })
+
     // Authors and Genres states
     const [authors, setAuthors] = useState([])
     const [genres, setGenres] = useState([])
@@ -40,20 +55,26 @@ function AdminAudiobooks() {
     const [loadingAuthors, setLoadingAuthors] = useState(false)
     const [loadingGenres, setLoadingGenres] = useState(false)
 
-    // PERBAIKAN 1: useEffect yang benar dengan dependency yang tepat
+    // Edit form separate search states
+    const [editAuthorSearch, setEditAuthorSearch] = useState('')
+    const [editGenreSearch, setEditGenreSearch] = useState('')
+    const [editFilteredAuthors, setEditFilteredAuthors] = useState([])
+    const [editFilteredGenres, setEditFilteredGenres] = useState([])
+
+    // useEffect yang benar dengan dependency yang tepat
     useEffect(() => {
         document.title = "Manage Audiobooks | Admin"
-        fetchAudiobooks(searchQuery, currentPage) // Pass kedua parameter
-    }, [currentPage]) // Hanya trigger saat currentPage berubah
+        fetchAudiobooks(searchQuery, currentPage)
+    }, [currentPage])
 
     // Load authors and genres when modal opens
     useEffect(() => {
-        if (showUploadModal) {
+        if (showUploadModal || showEditModal) {
             loadAuthorsAndGenres()
         }
-    }, [showUploadModal])
+    }, [showUploadModal, showEditModal])
 
-    // Filter authors based on search
+    // Filter authors based on search (Upload)
     useEffect(() => {
         if (authorSearch.trim() === '') {
             setFilteredAuthors(authors)
@@ -65,7 +86,7 @@ function AdminAudiobooks() {
         }
     }, [authorSearch, authors])
 
-    // Filter genres based on search
+    // Filter genres based on search (Upload)
     useEffect(() => {
         if (genreSearch.trim() === '') {
             setFilteredGenres(genres)
@@ -77,13 +98,36 @@ function AdminAudiobooks() {
         }
     }, [genreSearch, genres])
 
-    // PERBAIKAN 2: fetchAudiobooks yang konsisten
+    // Filter authors based on search (Edit)
+    useEffect(() => {
+        if (editAuthorSearch.trim() === '') {
+            setEditFilteredAuthors(authors)
+        } else {
+            const filtered = authors.filter(author =>
+                author.name.toLowerCase().includes(editAuthorSearch.toLowerCase())
+            )
+            setEditFilteredAuthors(filtered)
+        }
+    }, [editAuthorSearch, authors])
+
+    // Filter genres based on search (Edit)
+    useEffect(() => {
+        if (editGenreSearch.trim() === '') {
+            setEditFilteredGenres(genres)
+        } else {
+            const filtered = genres.filter(genre =>
+                genre.name.toLowerCase().includes(editGenreSearch.toLowerCase())
+            )
+            setEditFilteredGenres(filtered)
+        }
+    }, [editGenreSearch, genres])
+
     const fetchAudiobooks = async (search = '', page = 1) => {
         try {
             setLoading(true);
             setError('');
             
-            console.log(`Fetching audiobooks - Search: "${search}", Page: ${page}`); // Debug log
+            console.log(`Fetching audiobooks - Search: "${search}", Page: ${page}`);
             
             const params = {
                 page: page,
@@ -102,7 +146,6 @@ function AdminAudiobooks() {
                 if (response.data.pagination) {
                     setTotalItems(response.data.pagination.total);
                     setTotalPages(response.data.pagination.total_pages);
-                    // PERBAIKAN 3: Jangan set currentPage di sini, biarkan state yang handle
                     console.log(`Pagination - Current: ${page}, Total Pages: ${response.data.pagination.total_pages}, Total Items: ${response.data.pagination.total}`);
                 } else {
                     setTotalItems(response.data.items?.length || 0);
@@ -138,7 +181,6 @@ function AdminAudiobooks() {
             console.log('Authors Response:', authorsResponse)
             
             if (authorsResponse.success) {
-                // PERBAIKAN: Struktur response yang benar berdasarkan backend
                 const authorsData = authorsResponse.data?.data?.items || 
                               authorsResponse.data?.items || 
                               []
@@ -148,6 +190,7 @@ function AdminAudiobooks() {
             
                 setAuthors(authorsData)
                 setFilteredAuthors(authorsData)
+                setEditFilteredAuthors(authorsData)
             } else {
                 console.error('Authors Response Failed:', authorsResponse.error)
             }
@@ -157,7 +200,6 @@ function AdminAudiobooks() {
             console.log('Genres Response:', genresResponse)
         
             if (genresResponse.success) {
-                // PERBAIKAN: Struktur response yang benar berdasarkan backend
                 const genresData = genresResponse.data?.data?.items || 
                              genresResponse.data?.items || 
                              []
@@ -167,6 +209,7 @@ function AdminAudiobooks() {
             
                 setGenres(genresData)
                 setFilteredGenres(genresData)
+                setEditFilteredGenres(genresData)
             } else {
                 console.error('Genres Response Failed:', genresResponse.error)
             }
@@ -180,27 +223,21 @@ function AdminAudiobooks() {
         }
     }
 
-    // PERBAIKAN 4: Handle search yang benar
     const handleSearch = (e) => {
         e.preventDefault()
         console.log(`Search triggered with query: "${searchQuery}"`);
-        setCurrentPage(1) // Reset ke halaman 1
-        // fetchAudiobooks akan dipanggil otomatis oleh useEffect saat currentPage berubah
-        // Tapi untuk search immediate, kita panggil manual
+        setCurrentPage(1)
         fetchAudiobooks(searchQuery, 1)
     }
 
-    // PERBAIKAN 5: Handle page change yang simple dan clear
     const handlePageChange = (newPage) => {
         console.log(`Page change requested: ${currentPage} -> ${newPage}`);
         
         if (newPage >= 1 && newPage <= totalPages && newPage !== currentPage) {
-            setCurrentPage(newPage); // Ini akan trigger useEffect
-            // JANGAN panggil fetchAudiobooks di sini, biarkan useEffect yang handle
+            setCurrentPage(newPage);
         }
     };
 
-    // PERBAIKAN 6: Handle delete yang tidak mengganggu pagination
     const handleDeleteAudiobook = async (id, title) => {
         if (!window.confirm(`Are you sure you want to delete "${title}"?`)) {
             return
@@ -210,7 +247,6 @@ function AdminAudiobooks() {
             const response = await AudiobooksRepository.deleteAudiobook(id)
             
             if (response.success) {
-                // Tetap di halaman yang sama setelah delete
                 fetchAudiobooks(searchQuery, currentPage)
                 alert('Audiobook deleted successfully!')
             } else {
@@ -251,7 +287,7 @@ function AdminAudiobooks() {
             
             const submitData = {
                 ...uploadFormData,
-                reader_id: 1, // Fixed value as requested
+                reader_id: 1,
                 year_of_publishing: parseInt(uploadFormData.year_of_publishing)
             }
 
@@ -261,7 +297,6 @@ function AdminAudiobooks() {
                 alert('Audiobook uploaded successfully!')
                 setShowUploadModal(false)
                 resetUploadForm()
-                // Refresh the audiobooks list
                 fetchAudiobooks(searchQuery, currentPage)
             } else {
                 alert(`Error uploading audiobook: ${response.error}`)
@@ -270,6 +305,91 @@ function AdminAudiobooks() {
             alert('Network error occurred while uploading audiobook')
         } finally {
             setUploading(false)
+        }
+    }
+
+    // Handle edit form
+    const handleEditAudiobook = async (audiobook) => {
+        try {
+            setEditing(true)
+            
+            // Get detailed audiobook data
+            const response = await AudiobooksRepository.getAudiobookById(audiobook.id)
+            
+            if (response.success) {
+                const audiobookData = response.data
+                setEditingAudiobook(audiobookData)
+                
+                // Pre-fill form with current data
+                setEditFormData({
+                    title: audiobookData.title || '',
+                    author_id: audiobookData.author?.id || '',
+                    description: audiobookData.description || '',
+                    image_url: audiobookData.image_url || '',
+                    language: audiobookData.language || 'English',
+                    year_of_publishing: audiobookData.year_of_publishing || new Date().getFullYear(),
+                    total_duration: audiobookData.total_duration || '',
+                    genre_ids: audiobookData.genres?.map(genre => genre.id) || []
+                })
+                
+                setShowEditModal(true)
+            } else {
+                alert(`Error loading audiobook details: ${response.error}`)
+            }
+        } catch (error) {
+            alert('Network error occurred while loading audiobook details')
+        } finally {
+            setEditing(false)
+        }
+    }
+
+    const handleEditFormChange = (field, value) => {
+        setEditFormData(prev => ({
+            ...prev,
+            [field]: value
+        }))
+    }
+
+    const handleEditGenreToggle = (genreId) => {
+        setEditFormData(prev => ({
+            ...prev,
+            genre_ids: prev.genre_ids.includes(genreId)
+                ? prev.genre_ids.filter(id => id !== genreId)
+                : [...prev.genre_ids, genreId]
+        }))
+    }
+
+    const handleEditSubmit = async (e) => {
+        e.preventDefault()
+        
+        if (!editFormData.title || !editFormData.author_id || editFormData.genre_ids.length === 0) {
+            alert('Please fill in all required fields')
+            return
+        }
+
+        try {
+            setEditing(true)
+            
+            const submitData = {
+                ...editFormData,
+                reader_id: 1,
+                year_of_publishing: parseInt(editFormData.year_of_publishing)
+            }
+
+            const response = await AudiobooksRepository.updateAudiobook(editingAudiobook.id, submitData)
+            
+            if (response.success) {
+                alert('Audiobook updated successfully!')
+                setShowEditModal(false)
+                resetEditForm()
+                fetchAudiobooks(searchQuery, currentPage)
+            } else {
+                alert(`Error updating audiobook: ${response.error}`)
+            }
+        } catch (error) {
+            alert('Network error occurred while updating audiobook')
+        } finally {
+            setEditing(false)
         }
     }
 
@@ -288,9 +408,30 @@ function AdminAudiobooks() {
         setGenreSearch('')
     }
 
+    const resetEditForm = () => {
+        setEditFormData({
+            title: '',
+            author_id: '',
+            description: '',
+            image_url: '',
+            language: 'English',
+            year_of_publishing: new Date().getFullYear(),
+            total_duration: '',
+            genre_ids: []
+        })
+        setEditAuthorSearch('')
+        setEditGenreSearch('')
+        setEditingAudiobook(null)
+    }
+
     const handleCloseUploadModal = () => {
         setShowUploadModal(false)
         resetUploadForm()
+    }
+
+    const handleCloseEditModal = () => {
+        setShowEditModal(false)
+        resetEditForm()
     }
 
     const handleLogout = () => {
@@ -427,27 +568,13 @@ function AdminAudiobooks() {
                         <button 
                             className="admin-btn admin-btn-primary"
                             onClick={() => setShowUploadModal(true)}
-                        >
+                        >                            
                             Upload New Audiobook
                         </button>
                     </div>
 
                     <div className="admin-content-section">
                         <h3>Audiobook Library ({totalItems} total)</h3>
-                        
-                        {/* PERBAIKAN 7: Debug info untuk development */}
-                        {process.env.NODE_ENV === 'development' && (
-                            <div style={{ 
-                                // background: '#1f2937', 
-                                // color: '#10b981', 
-                                // padding: '0.5rem', 
-                                // fontSize: '0.75rem',
-                                // borderRadius: '4px',
-                                // marginBottom: '1rem'
-                            }}>
-                                {/* Debug: Page {currentPage} of {totalPages} | Search: "{searchQuery}" | Items: {audiobooks.length} */}
-                            </div>
-                        )}
                         
                         {loading && (
                             <div style={{ textAlign: 'center', padding: '2rem' }}>
@@ -492,17 +619,16 @@ function AdminAudiobooks() {
                                         <tr>
                                             <th>Title</th>
                                             <th>Author</th>
-                                            {/* <th>Reader</th> */}
-                                            <th>Genres</th>
+                                            <th>Year</th>
                                             <th>Language</th>
-                                            {/* <th>Duration</th> */}
+                                            <th>Genres</th>
                                             <th>Actions</th>
                                         </tr>
                                     </thead>
                                     <tbody>
                                         {audiobooks.length === 0 ? (
                                             <tr>
-                                                <td colSpan="7" style={{
+                                                <td colSpan="5" style={{
                                                     textAlign: 'center', 
                                                     padding: '3rem', 
                                                     color: '#94a3b8',
@@ -544,20 +670,30 @@ function AdminAudiobooks() {
                                                         </div>
                                                     </td>
                                                     <td>{audiobook.author?.name || 'Unknown'}</td>
-                                                    {/* <td>{audiobook.reader?.name || 'Unknown'}</td> */}
+                                                    <td>{audiobook.year_of_publishing || 'N/A'}</td>
+                                                    <td>{audiobook.language || 'N/A'}</td>
                                                     <td>
                                                         <div style={{ fontSize: '0.75rem', maxWidth: '150px' }}>
                                                             {formatGenres(audiobook.genres)}
                                                         </div>
                                                     </td>
-                                                    <td>{audiobook.language || 'N/A'}</td>
-                                                    {/* <td>{audiobook.total_duration || 'N/A'}</td>                                                     */}
                                                     <td>
                                                         <div style={{ display: 'flex', gap: '0.5rem' }}>
                                                             <button 
                                                                 className="table-action-btn edit"
                                                                 title="Edit audiobook"
+                                                                onClick={() => handleEditAudiobook(audiobook)}
+                                                                disabled={editing}
                                                             >
+                                                                {editing ? (
+                                                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                                                                        <path d="M12,4V2A10,10 0 0,0 2,12H4A8,8 0 0,1 12,4Z" />
+                                                                    </svg>
+                                                                ) : (
+                                                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                                                                        <path d="M20.71,7.04C21.1,6.65 21.1,6 20.71,5.63L18.37,3.29C18,2.9 17.35,2.9 16.96,3.29L15.12,5.12L18.87,8.87M3,17.25V21H6.75L17.81,9.93L14.06,6.18L3,17.25Z" />
+                                                                    </svg>
+                                                                )}
                                                                 Edit
                                                             </button>
                                                             <button 
@@ -565,6 +701,9 @@ function AdminAudiobooks() {
                                                                 title="Delete audiobook"
                                                                 onClick={() => handleDeleteAudiobook(audiobook.id, audiobook.title)}
                                                             >
+                                                                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                                                                    <path d="M19,4H15.5L14.5,3H9.5L8.5,4H5V6H19M6,19A2,2 0 0,0 8,21H16A2,2 0 0,0 18,19V7H6V19Z" />
+                                                                </svg>
                                                                 Delete
                                                             </button>
                                                         </div>
@@ -575,7 +714,7 @@ function AdminAudiobooks() {
                                     </tbody>
                                 </table>
 
-                                {/* PERBAIKAN 8: Pagination yang diperbaiki */}
+                                {/* Pagination sama seperti sebelumnya */}
                                 {totalPages > 1 && (
                                     <div className="pagination-container">
                                         <div className="pagination-info">
@@ -587,7 +726,7 @@ function AdminAudiobooks() {
                                                 className="pagination-btn"
                                                 onClick={() => handlePageChange(currentPage - 1)}
                                                 disabled={currentPage === 1}
-                                                type="button" // PENTING: tambahkan type button
+                                                type="button"
                                             >
                                                 ← Previous
                                             </button>
@@ -597,7 +736,7 @@ function AdminAudiobooks() {
                                                     Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
                                                         <button
                                                             key={page}
-                                                            type="button" // PENTING: tambahkan type button
+                                                            type="button"
                                                             className={`pagination-btn ${currentPage === page ? 'active' : ''}`}
                                                             onClick={() => handlePageChange(page)}
                                                         >
@@ -613,7 +752,7 @@ function AdminAudiobooks() {
                                                         ) : (
                                                             <button
                                                                 key={page}
-                                                                type="button" // PENTING: tambahkan type button
+                                                                type="button"
                                                                 className={`pagination-btn ${currentPage === page ? 'active' : ''}`}
                                                                 onClick={() => handlePageChange(page)}
                                                             >
@@ -628,7 +767,7 @@ function AdminAudiobooks() {
                                                 className="pagination-btn"
                                                 onClick={() => handlePageChange(currentPage + 1)}
                                                 disabled={currentPage === totalPages}
-                                                type="button" // PENTING: tambahkan type button
+                                                type="button"
                                             >
                                                 Next →
                                             </button>
@@ -641,12 +780,12 @@ function AdminAudiobooks() {
                 </div>
             </main>
 
-            {/* Upload Modal */}
+            {/* Upload Modal - sama seperti sebelumnya */}
             {showUploadModal && (
                 <div className="modal-overlay" onClick={handleCloseUploadModal}>
                     <div className="modal-content upload-modal" onClick={(e) => e.stopPropagation()}>
                         <div className="modal-header">
-                            <h3>                                
+                            <h3>
                                 Upload New Audiobook
                             </h3>
                             <button className="modal-close" onClick={handleCloseUploadModal}>×</button>
@@ -712,7 +851,17 @@ function AdminAudiobooks() {
                                             </div>
                                         </div>
 
-                                            
+                                        <div className="form-row">
+                                            <div className="form-group">
+                                                <label htmlFor="duration">Duration</label>
+                                                <input
+                                                    type="text"
+                                                    id="duration"
+                                                    value={uploadFormData.total_duration}
+                                                    onChange={(e) => handleUploadFormChange('total_duration', e.target.value)}
+                                                    placeholder="e.g., 10:23 or 2hr 30min"
+                                                />
+                                            </div>
 
                                             <div className="form-group">
                                                 <label htmlFor="image_url">Cover Image URL</label>
@@ -723,6 +872,7 @@ function AdminAudiobooks() {
                                                     onChange={(e) => handleUploadFormChange('image_url', e.target.value)}
                                                     placeholder="https://example.com/cover.jpg"
                                                 />
+                                            </div>
                                         </div>
                                     </div>
 
@@ -846,6 +996,234 @@ function AdminAudiobooks() {
                                                 <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
                                             </svg>
                                             Upload Audiobook
+                                        </>
+                                    )}
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
+
+            {/* Edit Modal */}
+            {showEditModal && (
+                <div className="modal-overlay" onClick={handleCloseEditModal}>
+                    <div className="modal-content upload-modal" onClick={(e) => e.stopPropagation()}>
+                        <div className="modal-header">
+                            <h3>
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" style={{marginRight: '0.5rem'}}>
+                                    <path d="M20.71,7.04C21.1,6.65 21.1,6 20.71,5.63L18.37,3.29C18,2.9 17.35,2.9 16.96,3.29L15.12,5.12L18.87,8.87M3,17.25V21H6.75L17.81,9.93L14.06,6.18L3,17.25Z" />
+                                </svg>
+                                Edit Audiobook
+                            </h3>
+                            <button className="modal-close" onClick={handleCloseEditModal}>×</button>
+                        </div>
+                        
+                        <form onSubmit={handleEditSubmit}>
+                            <div className="modal-body upload-form">
+                                <div className="form-grid">
+                                    {/* Basic Information */}
+                                    <div className="form-section">
+                                        <h4>Basic Information</h4>
+                                        
+                                        <div className="form-group">
+                                            <label htmlFor="edit-title">Title *</label>
+                                            <input
+                                                type="text"
+                                                id="edit-title"
+                                                value={editFormData.title}
+                                                onChange={(e) => handleEditFormChange('title', e.target.value)}
+                                                placeholder="Enter audiobook title"
+                                                required
+                                            />
+                                        </div>
+
+                                        <div className="form-group">
+                                            <label htmlFor="edit-description">Description</label>
+                                            <textarea
+                                                id="edit-description"
+                                                value={editFormData.description}
+                                                onChange={(e) => handleEditFormChange('description', e.target.value)}
+                                                placeholder="Enter book description"
+                                                rows="4"
+                                            />
+                                        </div>
+
+                                        <div className="form-row">
+                                            <div className="form-group">
+                                                <label htmlFor="edit-language">Language</label>
+                                                <select
+                                                    id="edit-language"
+                                                    value={editFormData.language}
+                                                    onChange={(e) => handleEditFormChange('language', e.target.value)}
+                                                >
+                                                    <option value="English">English</option>
+                                                    <option value="Indonesian">Indonesian</option>
+                                                    <option value="Spanish">Spanish</option>
+                                                    <option value="French">French</option>
+                                                    <option value="German">German</option>
+                                                    <option value="Other">Other</option>
+                                                </select>
+                                            </div>
+
+                                            <div className="form-group">
+                                                <label htmlFor="edit-year">Year</label>
+                                                <input
+                                                    type="number"
+                                                    id="edit-year"
+                                                    value={editFormData.year_of_publishing}
+                                                    onChange={(e) => handleEditFormChange('year_of_publishing', e.target.value)}
+                                                    min="1800"
+                                                    max={new Date().getFullYear()}
+                                                />
+                                            </div>
+                                        </div>
+
+                                        <div className="form-row">
+                                            <div className="form-group">
+                                                <label htmlFor="edit-duration">Duration</label>
+                                                <input
+                                                    type="text"
+                                                    id="edit-duration"
+                                                    value={editFormData.total_duration}
+                                                    onChange={(e) => handleEditFormChange('total_duration', e.target.value)}
+                                                    placeholder="e.g., 10:23 or 2hr 30min"
+                                                />
+                                            </div>
+
+                                            <div className="form-group">
+                                                <label htmlFor="edit-image_url">Cover Image URL</label>
+                                                <input
+                                                    type="url"
+                                                    id="edit-image_url"
+                                                    value={editFormData.image_url}
+                                                    onChange={(e) => handleEditFormChange('image_url', e.target.value)}
+                                                    placeholder="https://example.com/cover.jpg"
+                                                />
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Author Selection */}
+                                    <div className="form-section">
+                                        <h4>Author *</h4>
+                                        
+                                        <div className="form-group">
+                                            <label htmlFor="edit-author-search">Search Author</label>
+                                            <input
+                                                type="text"
+                                                id="edit-author-search"
+                                                value={editAuthorSearch}
+                                                onChange={(e) => setEditAuthorSearch(e.target.value)}
+                                                placeholder="Type to search authors..."
+                                            />
+                                        </div>
+
+                                        <div className="selection-list author-list">
+                                            {loadingAuthors ? (
+                                                <div className="loading-text">Loading authors...</div>
+                                            ) : (
+                                                editFilteredAuthors.map(author => (
+                                                    <div 
+                                                        key={author.id}
+                                                        className={`selection-item ${editFormData.author_id === author.id ? 'selected' : ''}`}
+                                                        onClick={() => handleEditFormChange('author_id', author.id)}
+                                                    >
+                                                        <span>{author.name}</span>
+                                                        {editFormData.author_id === author.id && (
+                                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                                                                <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
+                                                            </svg>
+                                                        )}
+                                                    </div>
+                                                ))
+                                            )}
+                                        </div>
+                                    </div>
+
+                                    {/* Genre Selection */}
+                                    <div className="form-section">
+                                        <h4>Genres * (Select multiple)</h4>
+                                        
+                                        <div className="form-group">
+                                            <label htmlFor="edit-genre-search">Search Genres</label>
+                                            <input
+                                                type="text"
+                                                id="edit-genre-search"
+                                                value={editGenreSearch}
+                                                onChange={(e) => setEditGenreSearch(e.target.value)}
+                                                placeholder="Type to search genres..."
+                                            />
+                                        </div>
+
+                                        <div className="selected-genres">
+                                            {editFormData.genre_ids.map(genreId => {
+                                                const genre = genres.find(g => g.id === genreId)
+                                                return genre ? (
+                                                    <span key={genreId} className="genre-tag">
+                                                        {genre.name}
+                                                        <button 
+                                                            type="button"
+                                                            onClick={() => handleEditGenreToggle(genreId)}
+                                                        >
+                                                            ×
+                                                        </button>
+                                                    </span>
+                                                ) : null
+                                            })}
+                                        </div>
+
+                                        <div className="selection-list genre-list">
+                                            {loadingGenres ? (
+                                                <div className="loading-text">Loading genres...</div>
+                                            ) : (
+                                                editFilteredGenres.map(genre => (
+                                                    <div 
+                                                        key={genre.id}
+                                                        className={`selection-item ${editFormData.genre_ids.includes(genre.id) ? 'selected' : ''}`}
+                                                        onClick={() => handleEditGenreToggle(genre.id)}
+                                                    >
+                                                        <span>{genre.name}</span>
+                                                        {editFormData.genre_ids.includes(genre.id) && (
+                                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                                                                <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
+                                                            </svg>
+                                                        )}
+                                                    </div>
+                                                ))
+                                            )}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="modal-footer">
+                                <button 
+                                    type="button" 
+                                    className="admin-btn admin-btn-secondary" 
+                                    onClick={handleCloseEditModal}
+                                    disabled={editing}
+                                >
+                                    Cancel
+                                </button>
+                                <button 
+                                    type="submit" 
+                                    className="admin-btn admin-btn-primary"
+                                    disabled={editing || !editFormData.title || !editFormData.author_id || editFormData.genre_ids.length === 0}
+                                >
+                                    {editing ? (
+                                        <>
+                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style={{marginRight: '0.5rem'}}>
+                                                <path d="M12,4V2A10,10 0 0,0 2,12H4A8,8 0 0,1 12,4Z" />
+                                            </svg>
+                                            Updating...
+                                        </>
+                                    ) : (
+                                        <>
+                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style={{marginRight: '0.5rem'}}>
+                                                <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
+                                            </svg>
+                                            Update Audiobook
                                         </>
                                     )}
                                 </button>

@@ -346,30 +346,44 @@ func (s *AudiobookService) convertToAudiobookResponse(audiobook *entity.Audioboo
 }
 
 func (s *AudiobookService) convertToAudiobookListResponse(audiobook *entity.Audiobook) dto.AudiobookListResponse {
-	response := dto.AudiobookListResponse{
-		ID:       audiobook.ID,
-		Title:    audiobook.Title,
-		ImageURL: audiobook.ImageURL,
-		Language: audiobook.Language,
-		Author: dto.AuthorResponse{
-			ID:   audiobook.Author.ID,
-			Name: audiobook.Author.Name,
-		},
-		Reader: dto.ReaderResponse{
-			ID:   audiobook.Reader.ID,
-			Name: audiobook.Reader.Name,
-		},
-	}
-
 	// Convert genres
+	var genres []dto.GenreResponse
 	for _, genre := range audiobook.Genres {
-		response.Genres = append(response.Genres, dto.GenreResponse{
+		genres = append(genres, dto.GenreResponse{
 			ID:   genre.ID,
 			Name: genre.Name,
 		})
 	}
 
-	return response
+	// Convert author
+	var author *dto.AuthorResponse
+	if audiobook.Author != nil {
+		author = &dto.AuthorResponse{
+			ID:   audiobook.Author.ID,
+			Name: audiobook.Author.Name,
+		}
+	}
+
+	// Convert reader
+	var reader *dto.ReaderResponse
+	if audiobook.Reader != nil {
+		reader = &dto.ReaderResponse{
+			ID:   audiobook.Reader.ID,
+			Name: audiobook.Reader.Name,
+		}
+	}
+
+	return dto.AudiobookListResponse{
+		ID:                audiobook.ID,
+		Title:             audiobook.Title,
+		Author:            author,
+		Reader:            reader,
+		ImageURL:          audiobook.ImageURL,
+		Language:          audiobook.Language,
+		YearOfPublishing:  audiobook.YearOfPublishing,  // Tambahkan ini
+		TotalDuration:     audiobook.TotalDuration,
+		Genres:            genres,
+	}
 }
 
 // GetAudiobooks retrieves audiobooks with filtering options

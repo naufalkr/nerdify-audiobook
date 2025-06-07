@@ -221,38 +221,6 @@ function AdminDashboard() {
                         </div>
                     )}
 
-                    <div className="admin-stats-grid">
-                        <div className="admin-stat-card">
-                            <h3>📚 Total Audiobooks</h3>
-                            <div className="stat-number">{stats.totalAudiobooks}</div>
-                            <p>Published audiobook titles</p>
-                        </div>
-                        <div className="admin-stat-card">
-                            <h3>👥 Total Users</h3>
-                            <div className="stat-number">{stats.totalUsers}</div>
-                            <p>Registered platform users</p>
-                            {stats.newUsersToday > 0 && (
-                                <small style={{ color: '#10b981' }}>
-                                    +{stats.newUsersToday} today
-                                </small>
-                            )}
-                        </div>
-                        <div className="admin-stat-card">
-                            <h3>🎧 Active Sessions</h3>
-                            <div className="stat-number">{stats.activeSessions}</div>
-                            <p>Currently listening users</p>
-                        </div>
-                        <div className="admin-stat-card">
-                            <h3>⚡ System Status</h3>
-                            <div className="stat-number">
-                                {getStatusIcon(stats.systemStatus)}
-                            </div>
-                            <p style={{ textTransform: 'capitalize' }}>
-                                System is {stats.systemStatus}
-                            </p>
-                        </div>
-                    </div>
-
                     <div className="admin-quick-actions">
                         <h2>🚀 Quick Actions</h2>
                         <div className="quick-actions-grid">
