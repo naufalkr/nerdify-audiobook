@@ -6,7 +6,7 @@ import './adminUsers.css'
 
 function AdminUsers() {
     const history = useHistory()
-    const { user } = useContext(GlobalContext)
+    const { user, logout } = useContext(GlobalContext)
     const [users, setUsers] = useState([])
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState('')
@@ -223,6 +223,35 @@ function AdminUsers() {
         return new Date(dateString).toLocaleDateString()
     }
 
+    // Add logout handler
+    const handleLogout = () => {
+        try {
+            if (logout && typeof logout === 'function') {
+                logout()
+            } else {
+                // Manual cleanup as fallback
+                localStorage.removeItem('token')
+                localStorage.removeItem('user')
+                localStorage.removeItem('mockUser')
+            }
+        } catch (error) {
+            console.error('Logout error:', error)
+            // Force cleanup even if logout fails
+            localStorage.removeItem('token')
+            localStorage.removeItem('user')
+            localStorage.removeItem('mockUser')
+        } finally {
+            window.location.href = '/login'
+        }
+    }
+
+    const getGreeting = () => {
+        const hour = new Date().getHours()
+        if (hour < 12) return 'Good Morning'
+        if (hour < 18) return 'Good Afternoon'
+        return 'Good Evening'
+    }
+
     return (
         <div className="admin-container">
             <header className="admin-header">
@@ -236,11 +265,17 @@ function AdminUsers() {
                     </Link>
                     <div className="admin-user-info">
                         <span className="admin-welcome">
-                            {user?.full_name || user?.username || 'Admin'}
+                            {getGreeting()}, {user?.full_name || user?.username || 'Admin'}
                         </span>
                         <span className="admin-role-badge">
                             {user?.role || 'ADMIN'}
                         </span>
+                        <button onClick={handleLogout} className="admin-logout-btn">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style={{marginRight: '0.5rem'}}>
+                                <path d="M17 7l-1.41 1.41L18.17 11H8v2h10.17l-2.58 2.59L17 17l5-5zM4 5h8V3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h8v-2H4V5z"/>
+                            </svg>
+                            Logout
+                        </button>
                     </div>
                 </div>
             </header>
@@ -290,9 +325,9 @@ function AdminUsers() {
                     )}
 
                     {/* Filters and Search */}
-                    <div className="users-controls">
+                    <div className="admin-actions-bar">
                         <div className="search-box">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                            <svg width="30" height="20" viewBox="0 0 24 24" fill="currentColor">
                                 <path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/>
                             </svg>
                             <input
@@ -303,177 +338,207 @@ function AdminUsers() {
                             />
                         </div>
 
-                        <div className="filters">
-                            <select value={selectedRole} onChange={handleRoleFilter}>
+                        <div className="filters" style={{ display: 'flex', gap: '1rem', alignItems: 'center', marginLeft: 'auto' }}>
+                            <select value={selectedRole} onChange={handleRoleFilter} style={{
+                                padding: '0.5rem 1rem',
+                                border: '1px solid rgba(255, 255, 255, 0.1)',
+                                borderRadius: '0.375rem',
+                                background: 'rgba(255, 255, 255, 0.05)',
+                                color: 'white',
+                                fontSize: '0.875rem'
+                            }}>
                                 <option value="">All Roles</option>
                                 <option value="SUPERADMIN">Super Admin</option>
                                 <option value="ADMIN">Admin</option>
                                 <option value="USER">User</option>
                             </select>
 
-                            <select value={selectedStatus} onChange={handleStatusFilter}>
+                            <select value={selectedStatus} onChange={handleStatusFilter} style={{
+                                padding: '0.5rem 1rem',
+                                border: '1px solid rgba(255, 255, 255, 0.1)',
+                                borderRadius: '0.375rem',
+                                background: 'rgba(255, 255, 255, 0.05)',
+                                color: 'white',
+                                fontSize: '0.875rem'
+                            }}>
                                 <option value="">All Status</option>
                                 <option value="active">Active</option>
                                 <option value="pending">Pending</option>
                                 <option value="inactive">Inactive</option>
                             </select>
 
-                            <button onClick={loadUsers} className="refresh-btn" disabled={loading}>
+                            <button onClick={loadUsers} className="admin-btn admin-btn-secondary" disabled={loading}>
                                 {loading ? 'Loading...' : 'Refresh'}
                             </button>
                         </div>
                     </div>
 
-                    {/* Users Statistics */}
-                    <div className="users-stats">
-                        <div className="stat-item">
-                            <span className="stat-number">{totalUsers}</span>
-                            <span className="stat-label">Total Users</span>
-                        </div>
-                        <div className="stat-item">
-                            <span className="stat-number">{users.filter(u => u.status === 'active').length}</span>
-                            <span className="stat-label">Active</span>
-                        </div>
-                        <div className="stat-item">
-                            <span className="stat-number">{users.filter(u => u.status === 'pending').length}</span>
-                            <span className="stat-label">Pending</span>
-                        </div>
-                        <div className="stat-item">
-                            <span className="stat-number">{users.filter(u => u.role === 'ADMIN').length}</span>
-                            <span className="stat-label">Admins</span>
-                        </div>
-                    </div>
+                    <div className="admin-content-section">
+                        <h3>Platform Users ({totalUsers} total)</h3>
 
-                    {/* Loading State */}
-                    {loading && (
-                        <div className="loading-state">
-                            <div className="loading-spinner"></div>
-                            <p>Loading users via UserRepository...</p>
-                        </div>
-                    )}
+                        {/* Loading State */}
+                        {loading && (
+                            <div style={{ textAlign: 'center', padding: '2rem' }}>
+                                <div style={{ fontSize: '2rem', marginBottom: '1rem' }}>⏳</div>
+                                <div>Loading users...</div>
+                            </div>
+                        )}
 
-                    {/* Users Table */}
-                    {!loading && (
-                        <div className="users-table-container">
-                            {users.length > 0 ? (
-                                <table className="users-table">
-                                    <thead>
-                                        <tr>
-                                            <th>User</th>
-                                            <th>Email</th>
-                                            <th>Role</th>
-                                            <th>Status</th>
-                                            <th>Verified</th>
-                                            <th>Created</th>
-                                            <th>Actions</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {users.map(userItem => (
-                                            <tr key={userItem.id}>
-                                                <td>
-                                                    <div className="user-info">
-                                                        <div className="user-avatar">
-                                                            {getUserInitials(userItem)}
-                                                        </div>
-                                                        <div className="user-details">
-                                                            <div className="user-name">{userItem.full_name}</div>
-                                                            <div className="user-username">@{userItem.user_name}</div>
-                                                        </div>
-                                                    </div>
-                                                </td>
-                                                <td>{userItem.email}</td>
-                                                <td>
-                                                    <span style={{
-                                                        color: userItem.role === 'SUPERADMIN' ? '#dc2626' : userItem.role === 'ADMIN' ? '#2563eb' : '#059669',
-                                                        backgroundColor: userItem.role === 'SUPERADMIN' ? '#fef2f2' : userItem.role === 'ADMIN' ? '#eff6ff' : '#ecfdf5',
-                                                        padding: '4px 8px',
-                                                        borderRadius: '4px',
-                                                        fontSize: '12px',
-                                                        fontWeight: '500'
-                                                    }}>
-                                                        {userItem.role}
-                                                    </span>
-                                                </td>
-                                                <td>
-                                                    <span style={{
-                                                        color: userItem.status === 'active' ? '#10b981' : userItem.status === 'pending' ? '#f59e0b' : '#ef4444',
-                                                        backgroundColor: userItem.status === 'active' ? '#ecfdf5' : userItem.status === 'pending' ? '#fffbeb' : '#fef2f2',
-                                                        padding: '4px 8px',
-                                                        borderRadius: '4px',
-                                                        fontSize: '12px',
-                                                        fontWeight: '500'
-                                                    }}>
-                                                        {userItem.status || 'Unknown'}
-                                                    </span>
-                                                </td>
-                                                <td>
-                                                    <span className={`verification-badge ${userItem.is_verified ? 'verified' : 'unverified'}`}>
-                                                        {userItem.is_verified ? 'Verified' : 'Unverified'}
-                                                    </span>
-                                                </td>
-                                                <td>{formatDate(userItem.created_at)}</td>
-                                                <td>
-                                                    <div className="action-buttons">
-                                                        <button 
-                                                            className="action-btn edit-btn"
-                                                            onClick={() => handleEditUser(userItem)}
-                                                            disabled={processing}
-                                                            title="Edit User"
-                                                        >
-                                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                                                                <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/>
-                                                            </svg>
-                                                        </button>
-                                                        <button 
-                                                            className="action-btn delete-btn"
-                                                            onClick={() => handleDeleteUser(userItem)}
-                                                            disabled={processing}
-                                                            title="Delete User"
-                                                        >
-                                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                                                                <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
-                                                            </svg>
-                                                        </button>
-                                                    </div>
-                                                </td>
+                        {/* Users Table */}
+                        {!loading && (
+                            <div className="admin-table-container">
+                                {users.length > 0 ? (
+                                    <table className="admin-table">
+                                        <thead>
+                                            <tr>
+                                                <th>User</th>
+                                                <th>Email</th>
+                                                <th>Role</th>
+                                                <th>Status</th>
+                                                <th>Verified</th>
+                                                <th>Created</th>
+                                                <th>Actions</th>
                                             </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
-                            ) : (
-                                <div className="no-users">
-                                    <h3>No users found</h3>
-                                    <p>CORS issue resolved. Click "Test API Direct" to manually load users.</p>
-                                </div>
-                            )}
-                        </div>
-                    )}
+                                        </thead>
+                                        <tbody>
+                                            {users.map(userItem => (
+                                                <tr key={userItem.id}>
+                                                    <td>
+                                                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                                                            <div style={{
+                                                                width: '36px',
+                                                                height: '36px',
+                                                                borderRadius: '50%',
+                                                                background: 'linear-gradient(135deg, #8b5cf6 0%, #06b6d4 100%)',
+                                                                display: 'flex',
+                                                                alignItems: 'center',
+                                                                justifyContent: 'center',
+                                                                color: 'white',
+                                                                fontWeight: '600',
+                                                                fontSize: '0.75rem'
+                                                            }}>
+                                                                {getUserInitials(userItem)}
+                                                            </div>
+                                                            <div>
+                                                                <div style={{ fontWeight: '500', fontSize: '0.875rem', marginBottom: '2px' }}>
+                                                                    {userItem.full_name}
+                                                                </div>
+                                                                <div style={{ fontSize: '0.75rem', color: '#6b7280' }}>
+                                                                    @{userItem.user_name}
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </td>
+                                                    <td>{userItem.email}</td>
+                                                    <td>
+                                                        <span style={{
+                                                            // color: userItem.role === 'SUPERADMIN' ? '#dc2626' : userItem.role === 'ADMIN' ? '#2563eb' : '#059669',
+                                                            // backgroundColor: userItem.role === 'SUPERADMIN' ? '#fef2f2' : userItem.role === 'ADMIN' ? '#eff6ff' : '#ecfdf5',
+                                                            padding: '4px 8px',
+                                                            borderRadius: '4px',
+                                                            fontSize: '12px',
+                                                            fontWeight: '500'
+                                                        }}>
+                                                            {userItem.role}
+                                                        </span>
+                                                    </td>
+                                                    <td>
+                                                        <span style={{
+                                                            color: userItem.status === 'active' ? '#10b981' : userItem.status === 'pending' ? '#f59e0b' : '#ef4444',
+                                                            backgroundColor: userItem.status === 'active' ? '#ecfdf5' : userItem.status === 'pending' ? '#fffbeb' : '#fef2f2',
+                                                            padding: '4px 8px',
+                                                            borderRadius: '4px',
+                                                            fontSize: '12px',
+                                                            fontWeight: '500'
+                                                        }}>
+                                                            {userItem.status || 'Unknown'}
+                                                        </span>
+                                                    </td>
+                                                    <td>
+                                                        <span style={{
+                                                            color: userItem.is_verified ? '#10b981' : '#f59e0b',
+                                                            backgroundColor: userItem.is_verified ? '#ecfdf5' : '#fffbeb',
+                                                            padding: '4px 8px',
+                                                            borderRadius: '4px',
+                                                            fontSize: '12px',
+                                                            fontWeight: '500'
+                                                        }}>
+                                                            {userItem.is_verified ? 'Verified' : 'Unverified'}
+                                                        </span>
+                                                    </td>
+                                                    <td>{formatDate(userItem.created_at)}</td>
+                                                    <td>
+                                                        <div style={{ display: 'flex', gap: '0.5rem' }}>
+                                                            <button 
+                                                                className="table-action-btn edit"
+                                                                onClick={() => handleEditUser(userItem)}
+                                                                disabled={processing}
+                                                                title="Edit User"
+                                                            >
+                                                                Edit
+                                                            </button>
+                                                            <button 
+                                                                className="table-action-btn delete"
+                                                                onClick={() => handleDeleteUser(userItem)}
+                                                                disabled={processing}
+                                                                title="Delete User"
+                                                            >
+                                                                Delete
+                                                            </button>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                ) : (
+                                    <div style={{
+                                        textAlign: 'center', 
+                                        padding: '3rem', 
+                                        color: '#94a3b8',
+                                        fontSize: '1rem'
+                                    }}>
+                                        <div style={{marginBottom: '1rem', fontSize: '2.5rem'}}>👥</div>
+                                        <div>No users found.</div>
+                                        <div style={{fontSize: '0.875rem', marginTop: '0.5rem', opacity: 0.7}}>
+                                            {searchTerm || selectedRole || selectedStatus ? 'Try adjusting your search terms or filters.' : 'No users have been registered yet.'}
+                                        </div>
+                                    </div>
+                                )}
 
-                    {/* Pagination */}
-                    {totalPages > 1 && (
-                        <div className="pagination">
-                            <button
-                                onClick={() => handlePageChange(currentPage - 1)}
-                                disabled={currentPage === 1}
-                                className="pagination-btn"
-                            >
-                                Previous
-                            </button>
-                            
-                            <span className="pagination-info">
-                                Page {currentPage} of {totalPages}
-                            </span>
-                            
-                            <button
-                                onClick={() => handlePageChange(currentPage + 1)}
-                                disabled={currentPage === totalPages}
-                                className="pagination-btn"
-                            >
-                                Next
-                            </button>
-                        </div>
-                    )}
+                                {/* Pagination */}
+                                {totalPages > 1 && (
+                                    <div className="pagination-container">
+                                        <div className="pagination-info">
+                                            Showing {((currentPage - 1) * itemsPerPage) + 1} to {Math.min(currentPage * itemsPerPage, totalUsers)} of {totalUsers} results
+                                        </div>
+                                        
+                                        <div className="pagination-controls">
+                                            <button 
+                                                className="pagination-btn"
+                                                onClick={() => handlePageChange(currentPage - 1)}
+                                                disabled={currentPage === 1}
+                                            >
+                                                ← Previous
+                                            </button>
+                                            
+                                            <span className="pagination-info">
+                                                Page {currentPage} of {totalPages}
+                                            </span>
+                                            
+                                            <button
+                                                onClick={() => handlePageChange(currentPage + 1)}
+                                                disabled={currentPage === totalPages}
+                                                className="pagination-btn"
+                                            >
+                                                Next →
+                                            </button>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        )}
+                    </div>
                 </div>
             </main>
 

@@ -16,57 +16,81 @@ function AdminAudiobooks() {
     const [totalPages, setTotalPages] = useState(1)
     const [totalItems, setTotalItems] = useState(0)
 
+    // PERBAIKAN 1: useEffect yang benar dengan dependency yang tepat
     useEffect(() => {
         document.title = "Manage Audiobooks | Admin"
-        fetchAudiobooks()
-    }, [currentPage])
+        fetchAudiobooks(searchQuery, currentPage) // Pass kedua parameter
+    }, [currentPage]) // Hanya trigger saat currentPage berubah
 
-    // Fetch audiobooks from API
-    const fetchAudiobooks = async (search = '') => {
-        setLoading(true)
-        setError(null)
-        
+    // PERBAIKAN 2: fetchAudiobooks yang konsisten
+    const fetchAudiobooks = async (search = '', page = 1) => {
         try {
-            const params = {
-                page: currentPage,
-                limit: 10
-            }
+            setLoading(true);
+            setError('');
             
-            if (search) {
-                params.search = search
+            console.log(`Fetching audiobooks - Search: "${search}", Page: ${page}`); // Debug log
+            
+            const params = {
+                page: page,
+                limit: 10
+            };
+            
+            if (search && search.trim()) {
+                params.search = search;
             }
 
-            const response = await AudiobooksRepository.getAllAudiobooks(params)
+            const response = await AudiobooksRepository.getAllAudiobooks(params);
             
             if (response.success) {
-                setAudiobooks(response.data.items || [])
-                setTotalItems(response.data.total || 0)
-                setTotalPages(Math.ceil((response.data.total || 0) / 10))
+                setAudiobooks(response.data.items || []);
+                
+                if (response.data.pagination) {
+                    setTotalItems(response.data.pagination.total);
+                    setTotalPages(response.data.pagination.total_pages);
+                    // PERBAIKAN 3: Jangan set currentPage di sini, biarkan state yang handle
+                    console.log(`Pagination - Current: ${page}, Total Pages: ${response.data.pagination.total_pages}, Total Items: ${response.data.pagination.total}`);
+                } else {
+                    setTotalItems(response.data.items?.length || 0);
+                    setTotalPages(1);
+                }
             } else {
-                setError(response.error || 'Failed to fetch audiobooks')
-                setAudiobooks([])
+                setError(response.error || 'Failed to fetch audiobooks');
+                setAudiobooks([]);
+                setTotalItems(0);
+                setTotalPages(1);
             }
         } catch (err) {
-            setError('Network error occurred')
-            setAudiobooks([])
+            console.error('Fetch error:', err);
+            setError('Network error occurred');
+            setAudiobooks([]);
+            setTotalItems(0);
+            setTotalPages(1);
         } finally {
-            setLoading(false)
+            setLoading(false);
         }
     }
 
-    // Handle search
+    // PERBAIKAN 4: Handle search yang benar
     const handleSearch = (e) => {
         e.preventDefault()
-        setCurrentPage(1)
-        fetchAudiobooks(searchQuery)
+        console.log(`Search triggered with query: "${searchQuery}"`);
+        setCurrentPage(1) // Reset ke halaman 1
+        // fetchAudiobooks akan dipanggil otomatis oleh useEffect saat currentPage berubah
+        // Tapi untuk search immediate, kita panggil manual
+        fetchAudiobooks(searchQuery, 1)
     }
 
-    // Handle page change
+    // PERBAIKAN 5: Handle page change yang simple dan clear
     const handlePageChange = (newPage) => {
-        setCurrentPage(newPage)
-    }
+        console.log(`Page change requested: ${currentPage} -> ${newPage}`);
+        
+        if (newPage >= 1 && newPage <= totalPages && newPage !== currentPage) {
+            setCurrentPage(newPage); // Ini akan trigger useEffect
+            // JANGAN panggil fetchAudiobooks di sini, biarkan useEffect yang handle
+        }
+    };
 
-    // Handle delete audiobook
+    // PERBAIKAN 6: Handle delete yang tidak mengganggu pagination
     const handleDeleteAudiobook = async (id, title) => {
         if (!window.confirm(`Are you sure you want to delete "${title}"?`)) {
             return
@@ -76,8 +100,8 @@ function AdminAudiobooks() {
             const response = await AudiobooksRepository.deleteAudiobook(id)
             
             if (response.success) {
-                // Refresh the list
-                fetchAudiobooks(searchQuery)
+                // Tetap di halaman yang sama setelah delete
+                fetchAudiobooks(searchQuery, currentPage)
                 alert('Audiobook deleted successfully!')
             } else {
                 alert(`Error deleting audiobook: ${response.error}`)
@@ -99,24 +123,44 @@ function AdminAudiobooks() {
         return 'Good Evening'
     }
 
-    // Format genres display
     const formatGenres = (genres) => {
         if (!genres || genres.length === 0) return 'No genres'
         return genres.map(genre => genre.name).join(', ')
     }
 
-    // Format date
-    const formatDate = (dateString) => {
-        if (!dateString) return 'N/A'
-        return new Date(dateString).toLocaleDateString('en-US', {
-            year: 'numeric',
-            month: 'short',
-            day: 'numeric'
-        })
-    }
+    const generatePaginationNumbers = () => {
+        const delta = 2;
+        const range = [];
+        const rangeWithDots = [];
+
+        for (let i = Math.max(2, currentPage - delta); 
+             i <= Math.min(totalPages - 1, currentPage + delta); 
+             i++) {
+            range.push(i);
+        }
+
+        if (currentPage - delta > 2) {
+            rangeWithDots.push(1, '...');
+        } else {
+            rangeWithDots.push(1);
+        }
+
+        rangeWithDots.push(...range);
+
+        if (currentPage + delta < totalPages - 1) {
+            rangeWithDots.push('...', totalPages);
+        } else {
+            if (totalPages > 1) {
+                rangeWithDots.push(totalPages);
+            }
+        }
+
+        return rangeWithDots;
+    };
 
     return (
         <div className="admin-container">
+            {/* Header sama seperti sebelumnya */}
             <header className="admin-header">
                 <div className="admin-header-content">
                     <img 
@@ -142,6 +186,7 @@ function AdminAudiobooks() {
             </header>
 
             <main className="admin-main">
+                {/* Sidebar sama seperti sebelumnya */}
                 <div className="admin-sidebar">
                     <nav className="admin-nav">
                         <Link to="/admin" className="admin-nav-link">
@@ -173,11 +218,10 @@ function AdminAudiobooks() {
 
                 <div className="admin-content">
                     <div className="admin-page-header">
-                        <h1>📚 Audiobook Management</h1>
+                        <h1>Audiobook Management</h1>
                         <p>Upload, edit, and manage your audiobook collection</p>
                     </div>
 
-                    {/* Search and Actions Bar */}
                     <div className="admin-actions-bar">
                         <form onSubmit={handleSearch} style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
                             <input
@@ -194,27 +238,39 @@ function AdminAudiobooks() {
                                 }}
                             />
                             <button type="submit" className="admin-btn admin-btn-secondary">
-                                🔍 Search
+                                Search
                             </button>
                         </form>
                         
                         <button className="admin-btn admin-btn-primary">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                            {/* <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
                                 <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6z"/>
                                 <polyline points="14,2 14,8 20,8"/>
                                 <line x1="16" y1="13" x2="8" y2="13"/>
                                 <line x1="16" y1="17" x2="8" y2="17"/>
                                 <polyline points="10,9 9,9 8,9"/>
-                            </svg>
+                            </svg> */}
                             Upload New Audiobook
                         </button>
                     </div>
 
-                    {/* Content Section */}
                     <div className="admin-content-section">
-                        <h3>Audiobook Library</h3>
+                        <h3>Audiobook Library ({totalItems} total)</h3>
                         
-                        {/* Loading State */}
+                        {/* PERBAIKAN 7: Debug info untuk development */}
+                        {process.env.NODE_ENV === 'development' && (
+                            <div style={{ 
+                                // background: '#1f2937', 
+                                // color: '#10b981', 
+                                // padding: '0.5rem', 
+                                // fontSize: '0.75rem',
+                                // borderRadius: '4px',
+                                // marginBottom: '1rem'
+                            }}>
+                                {/* Debug: Page {currentPage} of {totalPages} | Search: "{searchQuery}" | Items: {audiobooks.length} */}
+                            </div>
+                        )}
+                        
                         {loading && (
                             <div style={{ textAlign: 'center', padding: '2rem' }}>
                                 <div style={{ fontSize: '2rem', marginBottom: '1rem' }}>⏳</div>
@@ -222,7 +278,6 @@ function AdminAudiobooks() {
                             </div>
                         )}
 
-                        {/* Error State */}
                         {error && (
                             <div style={{ 
                                 textAlign: 'center', 
@@ -236,7 +291,7 @@ function AdminAudiobooks() {
                                 <div style={{ fontSize: '2rem', marginBottom: '1rem' }}>❌</div>
                                 <div>Error: {error}</div>
                                 <button 
-                                    onClick={() => fetchAudiobooks(searchQuery)}
+                                    onClick={() => fetchAudiobooks(searchQuery, currentPage)}
                                     style={{
                                         marginTop: '1rem',
                                         padding: '0.5rem 1rem',
@@ -252,7 +307,6 @@ function AdminAudiobooks() {
                             </div>
                         )}
 
-                        {/* Table */}
                         {!loading && !error && (
                             <div className="admin-table-container">
                                 <table className="admin-table">
@@ -270,15 +324,15 @@ function AdminAudiobooks() {
                                     <tbody>
                                         {audiobooks.length === 0 ? (
                                             <tr>
-                                                <td colSpan="8" style={{
+                                                <td colSpan="7" style={{
                                                     textAlign: 'center', 
                                                     padding: '3rem', 
                                                     color: '#94a3b8',
-                                                    fontSize: '1.1rem'
+                                                    fontSize: '1rem'
                                                 }}>
-                                                    <div style={{marginBottom: '1rem', fontSize: '3rem'}}>📚</div>
+                                                    <div style={{marginBottom: '1rem', fontSize: '2.5rem'}}>📚</div>
                                                     <div>No audiobooks found.</div>
-                                                    <div style={{fontSize: '0.9rem', marginTop: '0.5rem'}}>
+                                                    <div style={{fontSize: '0.875rem', marginTop: '0.5rem', opacity: 0.7}}>
                                                         {searchQuery ? 'Try adjusting your search terms.' : 'Upload your first audiobook to get started.'}
                                                     </div>
                                                 </td>
@@ -292,17 +346,17 @@ function AdminAudiobooks() {
                                                                 src={audiobook.image_url || '/assets/default-book-cover.jpg'}
                                                                 alt={audiobook.title}
                                                                 style={{
-                                                                    width: '40px',
-                                                                    height: '40px',
+                                                                    width: '36px',
+                                                                    height: '36px',
                                                                     objectFit: 'cover',
-                                                                    borderRadius: '0.25rem'
+                                                                    borderRadius: '4px'
                                                                 }}
                                                                 onError={(e) => {
                                                                     e.target.src = '/assets/default-book-cover.jpg'
                                                                 }}
                                                             />
                                                             <div>
-                                                                <div style={{ fontWeight: '600', fontSize: '0.875rem' }}>
+                                                                <div style={{ fontWeight: '500', fontSize: '0.875rem', marginBottom: '2px' }}>
                                                                     {audiobook.title}
                                                                 </div>
                                                                 <div style={{ fontSize: '0.75rem', color: '#6b7280' }}>
@@ -323,33 +377,17 @@ function AdminAudiobooks() {
                                                     <td>
                                                         <div style={{ display: 'flex', gap: '0.5rem' }}>
                                                             <button 
-                                                                className="admin-btn-small admin-btn-outline"
-                                                                title="Edit"
-                                                                style={{
-                                                                    padding: '0.25rem 0.5rem',
-                                                                    fontSize: '0.75rem',
-                                                                    border: '1px solid #d1d5db',
-                                                                    backgroundColor: 'white',
-                                                                    color: '#374151',
-                                                                    borderRadius: '0.25rem'
-                                                                }}
+                                                                className="table-action-btn edit"
+                                                                title="Edit audiobook"
                                                             >
-                                                                ✏️
+                                                                Edit
                                                             </button>
                                                             <button 
-                                                                className="admin-btn-small admin-btn-danger"
-                                                                title="Delete"
+                                                                className="table-action-btn delete"
+                                                                title="Delete audiobook"
                                                                 onClick={() => handleDeleteAudiobook(audiobook.id, audiobook.title)}
-                                                                style={{
-                                                                    padding: '0.25rem 0.5rem',
-                                                                    fontSize: '0.75rem',
-                                                                    border: '1px solid #dc2626',
-                                                                    backgroundColor: '#dc2626',
-                                                                    color: 'white',
-                                                                    borderRadius: '0.25rem'
-                                                                }}
                                                             >
-                                                                🗑️
+                                                                Delete
                                                             </button>
                                                         </div>
                                                     </td>
@@ -358,51 +396,67 @@ function AdminAudiobooks() {
                                         )}
                                     </tbody>
                                 </table>
-                            </div>
-                        )}
 
-                        {/* Pagination */}
-                        {!loading && !error && totalPages > 1 && (
-                            <div style={{ 
-                                display: 'flex', 
-                                justifyContent: 'center', 
-                                alignItems: 'center', 
-                                gap: '1rem', 
-                                marginTop: '2rem' 
-                            }}>
-                                <button 
-                                    onClick={() => handlePageChange(currentPage - 1)}
-                                    disabled={currentPage === 1}
-                                    style={{
-                                        padding: '0.5rem 1rem',
-                                        border: '1px solid #d1d5db',
-                                        backgroundColor: currentPage === 1 ? '#f9fafb' : 'white',
-                                        color: currentPage === 1 ? '#9ca3af' : '#374151',
-                                        borderRadius: '0.375rem',
-                                        cursor: currentPage === 1 ? 'not-allowed' : 'pointer'
-                                    }}
-                                >
-                                    ← Previous
-                                </button>
-                                
-                                <span style={{ fontSize: '0.875rem', color: '#6b7280' }}>
-                                    Page {currentPage} of {totalPages} ({totalItems} total items)
-                                </span>
-                                
-                                <button 
-                                    onClick={() => handlePageChange(currentPage + 1)}
-                                    disabled={currentPage === totalPages}
-                                    style={{
-                                        padding: '0.5rem 1rem',
-                                        border: '1px solid #d1d5db',
-                                        backgroundColor: currentPage === totalPages ? '#f9fafb' : 'white',
-                                        color: currentPage === totalPages ? '#9ca3af' : '#374151',
-                                        borderRadius: '0.375rem',
-                                        cursor: currentPage === totalPages ? 'not-allowed' : 'pointer'
-                                    }}
-                                >
-                                    Next →
-                                </button>
+                                {/* PERBAIKAN 8: Pagination yang diperbaiki */}
+                                {totalPages > 1 && (
+                                    <div className="pagination-container">
+                                        <div className="pagination-info">
+                                            Showing {((currentPage - 1) * 10) + 1} to {Math.min(currentPage * 10, totalItems)} of {totalItems} results
+                                        </div>
+                                        
+                                        <div className="pagination-controls">
+                                            <button 
+                                                className="pagination-btn"
+                                                onClick={() => handlePageChange(currentPage - 1)}
+                                                disabled={currentPage === 1}
+                                                type="button" // PENTING: tambahkan type button
+                                            >
+                                                ← Previous
+                                            </button>
+                                            
+                                            <div className="pagination-numbers">
+                                                {totalPages <= 7 ? (
+                                                    Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+                                                        <button
+                                                            key={page}
+                                                            type="button" // PENTING: tambahkan type button
+                                                            className={`pagination-btn ${currentPage === page ? 'active' : ''}`}
+                                                            onClick={() => handlePageChange(page)}
+                                                        >
+                                                            {page}
+                                                        </button>
+                                                    ))
+                                                ) : (
+                                                    generatePaginationNumbers().map((page, index) => (
+                                                        page === '...' ? (
+                                                            <span key={`dots-${index}`} style={{ padding: '0 0.5rem', color: '#6b7280' }}>
+                                                                ...
+                                                            </span>
+                                                        ) : (
+                                                            <button
+                                                                key={page}
+                                                                type="button" // PENTING: tambahkan type button
+                                                                className={`pagination-btn ${currentPage === page ? 'active' : ''}`}
+                                                                onClick={() => handlePageChange(page)}
+                                                            >
+                                                                {page}
+                                                            </button>
+                                                        )
+                                                    ))
+                                                )}
+                                            </div>
+                                            
+                                            <button 
+                                                className="pagination-btn"
+                                                onClick={() => handlePageChange(currentPage + 1)}
+                                                disabled={currentPage === totalPages}
+                                                type="button" // PENTING: tambahkan type button
+                                            >
+                                                Next →
+                                            </button>
+                                        </div>
+                                    </div>
+                                )}
                             </div>
                         )}
                     </div>
