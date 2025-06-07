@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useContext } from 'react'
 import { BrowserRouter, Switch, Route } from 'react-router-dom'
 
 // Import components
@@ -20,53 +20,63 @@ import AdminDashboard from './pages/Admin/Dashboard'
 import AdminAudiobooks from './pages/Admin/Audiobooks'
 import AdminUsers from './pages/Admin/Users'
 
-
 // Import context provider (not just the context)
-import { GlobalProvider } from './contexts'
+import { GlobalProvider, GlobalContext } from './contexts'
 
 import './App.css'
+
+function AppContent() {
+  const { currentAudio } = useContext(GlobalContext)
+  
+  return (
+    <BrowserRouter>
+      <Switch>
+        {/* Public Auth routes */}
+        <Route exact path="/login" component={Login} />
+        <Route exact path="/register" component={Register} />
+        
+        {/* Protected Profile route */}
+        <ProtectedRoute exact path="/profile">
+          <Profile />
+        </ProtectedRoute>
+
+        {/* SuperAdmin only routes */}
+        <SuperAdminRoute exact path="/admin">
+          <AdminDashboard />
+        </SuperAdminRoute>
+        <SuperAdminRoute exact path="/admin/audiobooks">
+          <AdminAudiobooks />
+        </SuperAdminRoute>
+        <SuperAdminRoute exact path="/admin/users">
+          <AdminUsers />
+        </SuperAdminRoute>
+
+        {/* User routes with sidebar layout */}
+        <UserRoute path="/">
+          <div 
+            className="main-container" 
+            data-show-player={currentAudio ? "true" : "false"}
+          >
+            <SideMenu />
+            <Switch>
+              <Route exact path="/genre/:genre" component={GenreAudiobooks} />
+              <Route exact path="/search" component={Search} />
+              <Route exact path="/audiobook/:id" component={Audiobook} />
+              <Route exact path="/audiobook/" component={Audiobook} />
+              <Route exact path="/" component={ListingPage} />
+            </Switch>
+            <Player />
+          </div>
+        </UserRoute>
+      </Switch>
+    </BrowserRouter>
+  )
+}
 
 function App() {
   return (
     <GlobalProvider>
-      <BrowserRouter>
-        <Switch>
-          {/* Public Auth routes */}
-          <Route exact path="/login" component={Login} />
-          <Route exact path="/register" component={Register} />
-          
-          {/* Protected Profile route */}
-          <ProtectedRoute exact path="/profile">
-            <Profile />
-          </ProtectedRoute>
-
-          {/* SuperAdmin only routes */}
-          <SuperAdminRoute exact path="/admin">
-            <AdminDashboard />
-          </SuperAdminRoute>
-          <SuperAdminRoute exact path="/admin/audiobooks">
-            <AdminAudiobooks />
-          </SuperAdminRoute>
-          <SuperAdminRoute exact path="/admin/users">
-            <AdminUsers />
-          </SuperAdminRoute>
-
-          {/* User routes with sidebar layout */}
-          <UserRoute path="/">
-            <div className="main-container">
-              <SideMenu />
-              <Switch>
-                <Route exact path="/genre/:genre" component={GenreAudiobooks} />
-                <Route exact path="/search" component={Search} />
-                <Route exact path="/audiobook/:id" component={Audiobook} />
-                <Route exact path="/audiobook/" component={Audiobook} />
-                <Route exact path="/" component={ListingPage} />
-              </Switch>
-              <Player />
-            </div>
-          </UserRoute>
-        </Switch>
-      </BrowserRouter>
+      <AppContent />
     </GlobalProvider>
   )
 }

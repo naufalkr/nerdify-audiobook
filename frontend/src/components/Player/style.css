@@ -1,113 +1,354 @@
 .player {
-  width: 100%;
-
-  padding: 15px;
-  box-sizing: border-box;
-
-  padding-top: 0px;
-  padding-bottom: 0px;
-
-  background: #2d1e38;
-  color: white;
-
-  display: flex;
-  gap: 20px;
-  align-items: center;
-
-  position: fixed;
-  bottom: 0px;
-  height: 88px;
-  width: 100%;
-  
-  border-top: 1px solid rgba(255,255,255,0.5);
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    z-index: 1000;
+    backdrop-filter: blur(20px);
 }
 
-.audio-player-wrapper {
-  flex: 1;
+.player-content {
     display: grid;
-    grid-template-columns: 18% 60% 18%;
-    gap: 20px;
+    grid-template-columns: 1fr auto 1fr;
     align-items: center;
+    padding: 0.3rem 2rem; /* Reduced from 1rem */
+    gap: 1rem; /* Reduced from 2rem */
+    max-width: 1400px;
+    margin: 0 auto;
 }
 
-.audio-chapter-name {
-  font-weight: bold;
-}
-
-.rhap_progress-filled {
-  background: linear-gradient(45.32deg, #ff45aa 14.7%, #d414f3 77.25%);
-}
-
-.rhap_download-progress {
-  background:  #FFC3E3;
-}
-
-.rhap_container {
-  background: none !important;
-  color: white !important;
-}
-
-.rhap_time {
-  color: white;
-}
-
-.current-audio-info .audio-chapter-name {
-  margin-bottom: 5px;
-}
-
-.current-audio-info .title {
-
-      margin-top: 0px;
-  }
-
-.audio-player-wrapper{
+/* Track Info - Left Side */
+.player-info {
     display: flex;
+    flex-direction: column;
+    gap: 0.1rem; /* Reduced from 0.2rem */
+    min-width: 0; /* Allow shrinking */
+}
+
+.track-title {
+    font-size: 0.85rem; /* Slightly smaller */
+    font-weight: 600;
+    color: white;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.book-title {
+    font-size: 0.75rem; /* Slightly smaller */
+    color: rgba(255, 255, 255, 0.7);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Player Controls - Center */
+.player-controls {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.8rem; /* Reduced from 1.2rem */
+    min-width: 400px; /* Ensure enough space for controls */
+}
+
+.control-buttons {
+    display: flex;
+    align-items: center;
     justify-content: center;
+    gap: 0.8rem; /* Reduced from 1rem */
 }
 
-  .audio-player-wrapper .rhap_container {
+.control-btn {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 50%;
+    color: white;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+    backdrop-filter: blur(10px);
+}
+
+.control-btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+    border-color: rgba(255, 255, 255, 0.4);
+    transform: scale(1.05);
+}
+
+.control-btn:active {
+    transform: scale(0.95);
+}
+
+.control-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.control-btn:disabled:hover {
+    transform: none;
+    background: rgba(255, 255, 255, 0.1);
+}
+
+/* Previous and Next buttons - smaller size */
+.prev-btn, .next-btn {
+    width: 40px; /* Reduced from 44px */
+    height: 40px; /* Reduced from 44px */
+    font-size: 14px; /* Reduced from 16px */
+}
+
+/* Play/Pause button - larger and more prominent */
+.play-pause-btn {
+    width: 50px; /* Reduced from 56px */
+    height: 50px; /* Reduced from 56px */
+    font-size: 18px; /* Reduced from 20px */
+    background: linear-gradient(135deg, #8b5cf6 0%, #a78bfa 100%);
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    box-shadow: 0 4px 15px rgba(139, 92, 246, 0.3);
+}
+
+.play-pause-btn:hover {
+    background: linear-gradient(135deg, #7c3aed 0%, #8b5cf6 100%);
+    box-shadow: 0 6px 20px rgba(139, 92, 246, 0.4);
+    transform: scale(1.08);
+}
+
+/* Loading animation for play button */
+.loading-icon {
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+/* Progress Bar - Below control buttons */
+.progress-container {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem; /* Reduced from 0.8rem */
+    width: 100%;
     max-width: 500px;
-  }
+}
 
-.current-audio-info  .audio-chapter-name{
-    max-height: 18px!important;
+.time-display {
+    font-size: 0.7rem; /* Reduced from 0.75rem */
+    color: rgba(255, 255, 255, 0.8);
+    font-weight: 500;
+    min-width: 35px; /* Reduced from 40px */
+    text-align: center;
+}
+
+.progress-bar {
+    flex: 1;
+    height: 5px; /* Reduced from 6px */
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 3px;
+    position: relative;
+    cursor: pointer;
     overflow: hidden;
 }
-.current-audio-info  .title{
-    max-height: 18px;
-    overflow: hidden;
+
+.progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #8b5cf6 0%, #a78bfa 100%);
+    border-radius: 3px;
+    transition: width 0.1s ease;
 }
 
-@media (max-width:800px){
-  .player{
-      grid-template-columns: 25% 75%;
-  }
-  .dummy{
-      display: none;
-  }
+.progress-handle {
+    position: absolute;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    width: 12px; /* Reduced from 14px */
+    height: 12px; /* Reduced from 14px */
+    background: white;
+    border-radius: 50%;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+    opacity: 0;
+    transition: opacity 0.2s ease;
 }
 
-@media (max-width:450px){
-  .current-audio-info{
-      width: 100%;
-      gap: 10px;
-  }
-  .current-audio-info * {
-      margin-top: 0px;
-      margin-bottom: 0px;
-  }
-  .rhap_container{
-      padding: 0px;
-  }
-  .rhap_progress-section, .rhap_volume-controls, .rhap_additional-controls{
-      display: none;
-  }
- .rhap_controls-section{
-    margin-top: none!important;
-  }
-  .player{
-      grid-template-columns: 80% 20%;
-      bottom: 51px;
-      height: 75px;
-  }
+.progress-bar:hover .progress-handle {
+    opacity: 1;
+}
+
+/* Volume Control - Right Side */
+.volume-control {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem; /* Reduced from 0.8rem */
+    justify-self: end;
+    color: rgba(255, 255, 255, 0.8);
+}
+
+.volume-control svg {
+    width: 16px; /* Reduced from 18px */
+    height: 16px; /* Reduced from 18px */
+}
+
+.volume-slider {
+    width: 90px; /* Reduced from 100px */
+    height: 3px; /* Reduced from 4px */
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 2px;
+    outline: none;
+    cursor: pointer;
+    -webkit-appearance: none;
+}
+
+.volume-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 12px; /* Reduced from 14px */
+    height: 12px; /* Reduced from 14px */
+    background: #8b5cf6;
+    border-radius: 50%;
+    cursor: pointer;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.volume-slider::-moz-range-thumb {
+    width: 12px; /* Reduced from 14px */
+    height: 12px; /* Reduced from 14px */
+    background: #8b5cf6;
+    border-radius: 50%;
+    cursor: pointer;
+    border: none;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+/* Error Display */
+.player-error {
+    position: absolute;
+    top: -45px; /* Adjusted position */
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(220, 38, 38, 0.9);
+    color: white;
+    padding: 0.4rem 0.8rem; /* Reduced padding */
+    border-radius: 6px;
+    font-size: 0.75rem; /* Slightly smaller */
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    backdrop-filter: blur(10px);
+    z-index: 1001;
+}
+
+.error-close {
+    background: none;
+    border: none;
+    color: white;
+    font-size: 1.1rem; /* Slightly smaller */
+    cursor: pointer;
+    padding: 0;
+    line-height: 1;
+}
+
+/* Responsive Design */
+@media (max-width: 1024px) {
+    .player-content {
+        grid-template-columns: 1fr auto 1fr;
+        gap: 1.2rem; /* Reduced from 1.5rem */
+        padding: 0.6rem 1.5rem; /* Reduced padding */
+    }
+    
+    .player-controls {
+        min-width: 320px; /* Reduced from 350px */
+        gap: 0.7rem; /* Reduced gap */
+    }
+    
+    .progress-container {
+        max-width: 380px; /* Reduced from 400px */
+    }
+}
+
+@media (max-width: 768px) {
+    .player-content {
+        grid-template-columns: 1fr;
+        grid-template-rows: auto auto auto;
+        gap: 0.8rem; /* Reduced from 1rem */
+        padding: 0.8rem; /* Reduced from 1rem */
+        text-align: center;
+    }
+    
+    .player-info {
+        order: 1;
+        align-items: center;
+    }
+    
+    .player-controls {
+        order: 2;
+        min-width: auto;
+        gap: 0.6rem; /* Reduced gap */
+    }
+    
+    .volume-control {
+        order: 3;
+        justify-self: center;
+    }
+    
+    .control-buttons {
+        gap: 0.6rem; /* Reduced from 0.8rem */
+    }
+    
+    .prev-btn, .next-btn {
+        width: 36px; /* Reduced from 40px */
+        height: 36px; /* Reduced from 40px */
+        font-size: 12px; /* Reduced from 14px */
+    }
+    
+    .play-pause-btn {
+        width: 44px; /* Reduced from 50px */
+        height: 44px; /* Reduced from 50px */
+        font-size: 16px; /* Reduced from 18px */
+    }
+    
+    .progress-container {
+        max-width: 100%;
+    }
+    
+    .volume-slider {
+        width: 70px; /* Reduced from 80px */
+    }
+}
+
+@media (max-width: 450px) {
+    .player-content {
+        padding: 0.6rem; /* Reduced from 0.8rem */
+        gap: 0.6rem; /* Reduced from 0.8rem */
+    }
+    
+    .control-buttons {
+        gap: 0.5rem; /* Reduced from 0.6rem */
+    }
+    
+    .prev-btn, .next-btn {
+        width: 32px; /* Reduced from 36px */
+        height: 32px; /* Reduced from 36px */
+        font-size: 11px; /* Reduced from 12px */
+    }
+    
+    .play-pause-btn {
+        width: 40px; /* Reduced from 44px */
+        height: 40px; /* Reduced from 44px */
+        font-size: 14px; /* Reduced from 16px */
+    }
+    
+    .progress-container {
+        gap: 0.4rem; /* Reduced from 0.5rem */
+    }
+    
+    .volume-slider {
+        width: 50px; /* Reduced from 60px */
+    }
+    
+    .time-display {
+        font-size: 0.65rem; /* Reduced from 0.7rem */
+        min-width: 30px; /* Reduced from 35px */
+    }
 }

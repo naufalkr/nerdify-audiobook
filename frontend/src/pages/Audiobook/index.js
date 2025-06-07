@@ -9,21 +9,28 @@ function Audiobook({ match, history }) {
     document.title = "Audiobook Details | The Book Hub"
 
     const audiobookId = match.params.id
-    const { setCurrentAudio } = useContext(GlobalContext)
+    const { playAudio } = useContext(GlobalContext)
 
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState(null)
     const [audiobook, setAudiobook] = useState(null)
 
-    const updateCurrentAudio = (track) => {
-        setCurrentAudio({
-            bookTitle: audiobook.title,
-            chapter: {
-                title: track.title,
-                url: track.url,
-                duration: track.duration
-            }
-        })
+    const handlePlayTrack = async (track) => {
+        try {
+            console.log('Playing track:', track)
+            
+            await playAudio({
+                trackId: track.id,
+                bookTitle: audiobook.title,
+                chapter: {
+                    title: track.title,
+                    url: track.url,
+                    duration: track.duration
+                }
+            })
+        } catch (err) {
+            console.error('Error playing track:', err)
+        }
     }
 
     const formatDuration = (duration) => {
@@ -75,7 +82,7 @@ function Audiobook({ match, history }) {
     if (loading) {
         return (
             <WrapperPage>
-                <div className="audiobook-page rest-page">
+                <div className="audiobook-page">
                     <div className="loading">
                         <div></div>
                         <div></div>
@@ -89,7 +96,7 @@ function Audiobook({ match, history }) {
     if (error) {
         return (
             <WrapperPage>
-                <div className="audiobook-page rest-page">
+                <div className="audiobook-page">
                     <div style={{ 
                         textAlign: 'center', 
                         padding: '3rem',
@@ -124,7 +131,7 @@ function Audiobook({ match, history }) {
     if (!audiobook) {
         return (
             <WrapperPage>
-                <div className="audiobook-page rest-page">
+                <div className="audiobook-page">
                     <div style={{ 
                         textAlign: 'center', 
                         padding: '3rem',
@@ -155,7 +162,7 @@ function Audiobook({ match, history }) {
 
     return (
         <WrapperPage>
-            <div className="audiobook-page rest-page">
+            <div className="audiobook-page">
                 {/* Back Button */}
                 <button 
                     onClick={handleBackClick}
@@ -260,7 +267,7 @@ function Audiobook({ match, history }) {
                                 <div
                                     key={track.id}
                                     className="chapter"
-                                    onClick={() => updateCurrentAudio(track)}
+                                    onClick={() => handlePlayTrack(track)}
                                 >
                                     <div className="chapter-number">
                                         {String(index + 1).padStart(2, '0')}
