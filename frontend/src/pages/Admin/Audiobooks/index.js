@@ -16,11 +16,66 @@ function AdminAudiobooks() {
     const [totalPages, setTotalPages] = useState(1)
     const [totalItems, setTotalItems] = useState(0)
 
+    // Upload form states
+    const [showUploadModal, setShowUploadModal] = useState(false)
+    const [uploading, setUploading] = useState(false)
+    const [uploadFormData, setUploadFormData] = useState({
+        title: '',
+        author_id: '',
+        description: '',
+        image_url: '',
+        language: 'English',
+        year_of_publishing: new Date().getFullYear(),
+        total_duration: '',
+        genre_ids: []
+    })
+
+    // Authors and Genres states
+    const [authors, setAuthors] = useState([])
+    const [genres, setGenres] = useState([])
+    const [filteredAuthors, setFilteredAuthors] = useState([])
+    const [filteredGenres, setFilteredGenres] = useState([])
+    const [authorSearch, setAuthorSearch] = useState('')
+    const [genreSearch, setGenreSearch] = useState('')
+    const [loadingAuthors, setLoadingAuthors] = useState(false)
+    const [loadingGenres, setLoadingGenres] = useState(false)
+
     // PERBAIKAN 1: useEffect yang benar dengan dependency yang tepat
     useEffect(() => {
         document.title = "Manage Audiobooks | Admin"
         fetchAudiobooks(searchQuery, currentPage) // Pass kedua parameter
     }, [currentPage]) // Hanya trigger saat currentPage berubah
+
+    // Load authors and genres when modal opens
+    useEffect(() => {
+        if (showUploadModal) {
+            loadAuthorsAndGenres()
+        }
+    }, [showUploadModal])
+
+    // Filter authors based on search
+    useEffect(() => {
+        if (authorSearch.trim() === '') {
+            setFilteredAuthors(authors)
+        } else {
+            const filtered = authors.filter(author =>
+                author.name.toLowerCase().includes(authorSearch.toLowerCase())
+            )
+            setFilteredAuthors(filtered)
+        }
+    }, [authorSearch, authors])
+
+    // Filter genres based on search
+    useEffect(() => {
+        if (genreSearch.trim() === '') {
+            setFilteredGenres(genres)
+        } else {
+            const filtered = genres.filter(genre =>
+                genre.name.toLowerCase().includes(genreSearch.toLowerCase())
+            )
+            setFilteredGenres(filtered)
+        }
+    }, [genreSearch, genres])
 
     // PERBAIKAN 2: fetchAudiobooks yang konsisten
     const fetchAudiobooks = async (search = '', page = 1) => {
@@ -70,6 +125,61 @@ function AdminAudiobooks() {
         }
     }
 
+    // Load authors and genres for form
+    const loadAuthorsAndGenres = async () => {
+        try {
+            setLoadingAuthors(true)
+            setLoadingGenres(true)
+
+            console.log('=== Loading Authors and Genres ===')
+
+            // Load authors
+            const authorsResponse = await AudiobooksRepository.getAllAuthors({ limit: 100 })
+            console.log('Authors Response:', authorsResponse)
+            
+            if (authorsResponse.success) {
+                // PERBAIKAN: Struktur response yang benar berdasarkan backend
+                const authorsData = authorsResponse.data?.data?.items || 
+                              authorsResponse.data?.items || 
+                              []
+            
+                console.log('Authors Data extracted:', authorsData)
+                console.log('Authors count:', authorsData.length)
+            
+                setAuthors(authorsData)
+                setFilteredAuthors(authorsData)
+            } else {
+                console.error('Authors Response Failed:', authorsResponse.error)
+            }
+
+            // Load genres
+            const genresResponse = await AudiobooksRepository.getAllGenres({ limit: 100 })
+            console.log('Genres Response:', genresResponse)
+        
+            if (genresResponse.success) {
+                // PERBAIKAN: Struktur response yang benar berdasarkan backend
+                const genresData = genresResponse.data?.data?.items || 
+                             genresResponse.data?.items || 
+                             []
+            
+                console.log('Genres Data extracted:', genresData)
+                console.log('Genres count:', genresData.length)
+            
+                setGenres(genresData)
+                setFilteredGenres(genresData)
+            } else {
+                console.error('Genres Response Failed:', genresResponse.error)
+            }
+        
+            console.log('=== Loading Complete ===')
+        } catch (error) {
+            console.error('Error loading authors/genres:', error)
+        } finally {
+            setLoadingAuthors(false)
+            setLoadingGenres(false)
+        }
+    }
+
     // PERBAIKAN 4: Handle search yang benar
     const handleSearch = (e) => {
         e.preventDefault()
@@ -109,6 +219,78 @@ function AdminAudiobooks() {
         } catch (err) {
             alert('Network error occurred while deleting audiobook')
         }
+    }
+
+    // Handle upload form
+    const handleUploadFormChange = (field, value) => {
+        setUploadFormData(prev => ({
+            ...prev,
+            [field]: value
+        }))
+    }
+
+    const handleGenreToggle = (genreId) => {
+        setUploadFormData(prev => ({
+            ...prev,
+            genre_ids: prev.genre_ids.includes(genreId)
+                ? prev.genre_ids.filter(id => id !== genreId)
+                : [...prev.genre_ids, genreId]
+        }))
+    }
+
+    const handleUploadSubmit = async (e) => {
+        e.preventDefault()
+        
+        if (!uploadFormData.title || !uploadFormData.author_id || uploadFormData.genre_ids.length === 0) {
+            alert('Please fill in all required fields')
+            return
+        }
+
+        try {
+            setUploading(true)
+            
+            const submitData = {
+                ...uploadFormData,
+                reader_id: 1, // Fixed value as requested
+                year_of_publishing: parseInt(uploadFormData.year_of_publishing)
+            }
+
+            const response = await AudiobooksRepository.createAudiobook(submitData)
+            
+            if (response.success) {
+                alert('Audiobook uploaded successfully!')
+                setShowUploadModal(false)
+                resetUploadForm()
+                // Refresh the audiobooks list
+                fetchAudiobooks(searchQuery, currentPage)
+            } else {
+                alert(`Error uploading audiobook: ${response.error}`)
+            }
+        } catch (error) {
+            alert('Network error occurred while uploading audiobook')
+        } finally {
+            setUploading(false)
+        }
+    }
+
+    const resetUploadForm = () => {
+        setUploadFormData({
+            title: '',
+            author_id: '',
+            description: '',
+            image_url: '',
+            language: 'English',
+            year_of_publishing: new Date().getFullYear(),
+            total_duration: '',
+            genre_ids: []
+        })
+        setAuthorSearch('')
+        setGenreSearch('')
+    }
+
+    const handleCloseUploadModal = () => {
+        setShowUploadModal(false)
+        resetUploadForm()
     }
 
     const handleLogout = () => {
@@ -242,14 +424,10 @@ function AdminAudiobooks() {
                             </button>
                         </form>
                         
-                        <button className="admin-btn admin-btn-primary">
-                            {/* <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6z"/>
-                                <polyline points="14,2 14,8 20,8"/>
-                                <line x1="16" y1="13" x2="8" y2="13"/>
-                                <line x1="16" y1="17" x2="8" y2="17"/>
-                                <polyline points="10,9 9,9 8,9"/>
-                            </svg> */}
+                        <button 
+                            className="admin-btn admin-btn-primary"
+                            onClick={() => setShowUploadModal(true)}
+                        >
                             Upload New Audiobook
                         </button>
                     </div>
@@ -314,10 +492,10 @@ function AdminAudiobooks() {
                                         <tr>
                                             <th>Title</th>
                                             <th>Author</th>
-                                            <th>Reader</th>
+                                            {/* <th>Reader</th> */}
                                             <th>Genres</th>
                                             <th>Language</th>
-                                            <th>Duration</th>
+                                            {/* <th>Duration</th> */}
                                             <th>Actions</th>
                                         </tr>
                                     </thead>
@@ -366,14 +544,14 @@ function AdminAudiobooks() {
                                                         </div>
                                                     </td>
                                                     <td>{audiobook.author?.name || 'Unknown'}</td>
-                                                    <td>{audiobook.reader?.name || 'Unknown'}</td>
+                                                    {/* <td>{audiobook.reader?.name || 'Unknown'}</td> */}
                                                     <td>
                                                         <div style={{ fontSize: '0.75rem', maxWidth: '150px' }}>
                                                             {formatGenres(audiobook.genres)}
                                                         </div>
                                                     </td>
                                                     <td>{audiobook.language || 'N/A'}</td>
-                                                    <td>{audiobook.total_duration || 'N/A'}</td>                                                    
+                                                    {/* <td>{audiobook.total_duration || 'N/A'}</td>                                                     */}
                                                     <td>
                                                         <div style={{ display: 'flex', gap: '0.5rem' }}>
                                                             <button 
@@ -462,6 +640,220 @@ function AdminAudiobooks() {
                     </div>
                 </div>
             </main>
+
+            {/* Upload Modal */}
+            {showUploadModal && (
+                <div className="modal-overlay" onClick={handleCloseUploadModal}>
+                    <div className="modal-content upload-modal" onClick={(e) => e.stopPropagation()}>
+                        <div className="modal-header">
+                            <h3>                                
+                                Upload New Audiobook
+                            </h3>
+                            <button className="modal-close" onClick={handleCloseUploadModal}>×</button>
+                        </div>
+                        
+                        <form onSubmit={handleUploadSubmit}>
+                            <div className="modal-body upload-form">
+                                <div className="form-grid">
+                                    {/* Basic Information */}
+                                    <div className="form-section">
+                                        <h4>Basic Information</h4>
+                                        
+                                        <div className="form-group">
+                                            <label htmlFor="title">Title *</label>
+                                            <input
+                                                type="text"
+                                                id="title"
+                                                value={uploadFormData.title}
+                                                onChange={(e) => handleUploadFormChange('title', e.target.value)}
+                                                placeholder="Enter audiobook title"
+                                                required
+                                            />
+                                        </div>
+
+                                        <div className="form-group">
+                                            <label htmlFor="description">Description</label>
+                                            <textarea
+                                                id="description"
+                                                value={uploadFormData.description}
+                                                onChange={(e) => handleUploadFormChange('description', e.target.value)}
+                                                placeholder="Enter book description"
+                                                rows="4"
+                                            />
+                                        </div>
+
+                                        <div className="form-row">
+                                            <div className="form-group">
+                                                <label htmlFor="language">Language</label>
+                                                <select
+                                                    id="language"
+                                                    value={uploadFormData.language}
+                                                    onChange={(e) => handleUploadFormChange('language', e.target.value)}
+                                                >
+                                                    <option value="English">English</option>
+                                                    <option value="Indonesian">Indonesian</option>
+                                                    <option value="Spanish">Spanish</option>
+                                                    <option value="French">French</option>
+                                                    <option value="German">German</option>
+                                                    <option value="Other">Other</option>
+                                                </select>
+                                            </div>
+
+                                            <div className="form-group">
+                                                <label htmlFor="year">Year</label>
+                                                <input
+                                                    type="number"
+                                                    id="year"
+                                                    value={uploadFormData.year_of_publishing}
+                                                    onChange={(e) => handleUploadFormChange('year_of_publishing', e.target.value)}
+                                                    min="1800"
+                                                    max={new Date().getFullYear()}
+                                                />
+                                            </div>
+                                        </div>
+
+                                            
+
+                                            <div className="form-group">
+                                                <label htmlFor="image_url">Cover Image URL</label>
+                                                <input
+                                                    type="url"
+                                                    id="image_url"
+                                                    value={uploadFormData.image_url}
+                                                    onChange={(e) => handleUploadFormChange('image_url', e.target.value)}
+                                                    placeholder="https://example.com/cover.jpg"
+                                                />
+                                        </div>
+                                    </div>
+
+                                    {/* Author Selection */}
+                                    <div className="form-section">
+                                        <h4>Author *</h4>
+                                        
+                                        <div className="form-group">
+                                            <label htmlFor="author-search">Search Author</label>
+                                            <input
+                                                type="text"
+                                                id="author-search"
+                                                value={authorSearch}
+                                                onChange={(e) => setAuthorSearch(e.target.value)}
+                                                placeholder="Type to search authors..."
+                                            />
+                                        </div>
+
+                                        <div className="selection-list author-list">
+                                            {loadingAuthors ? (
+                                                <div className="loading-text">Loading authors...</div>
+                                            ) : (
+                                                filteredAuthors.map(author => (
+                                                    <div 
+                                                        key={author.id}
+                                                        className={`selection-item ${uploadFormData.author_id === author.id ? 'selected' : ''}`}
+                                                        onClick={() => handleUploadFormChange('author_id', author.id)}
+                                                    >
+                                                        <span>{author.name}</span>
+                                                        {uploadFormData.author_id === author.id && (
+                                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                                                                <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
+                                                            </svg>
+                                                        )}
+                                                    </div>
+                                                ))
+                                            )}
+                                        </div>
+                                    </div>
+
+                                    {/* Genre Selection */}
+                                    <div className="form-section">
+                                        <h4>Genres * (Select multiple)</h4>
+                                        
+                                        <div className="form-group">
+                                            <label htmlFor="genre-search">Search Genres</label>
+                                            <input
+                                                type="text"
+                                                id="genre-search"
+                                                value={genreSearch}
+                                                onChange={(e) => setGenreSearch(e.target.value)}
+                                                placeholder="Type to search genres..."
+                                            />
+                                        </div>
+
+                                        <div className="selected-genres">
+                                            {uploadFormData.genre_ids.map(genreId => {
+                                                const genre = genres.find(g => g.id === genreId)
+                                                return genre ? (
+                                                    <span key={genreId} className="genre-tag">
+                                                        {genre.name}
+                                                        <button 
+                                                            type="button"
+                                                            onClick={() => handleGenreToggle(genreId)}
+                                                        >
+                                                            ×
+                                                        </button>
+                                                    </span>
+                                                ) : null
+                                            })}
+                                        </div>
+
+                                        <div className="selection-list genre-list">
+                                            {loadingGenres ? (
+                                                <div className="loading-text">Loading genres...</div>
+                                            ) : (
+                                                filteredGenres.map(genre => (
+                                                    <div 
+                                                        key={genre.id}
+                                                        className={`selection-item ${uploadFormData.genre_ids.includes(genre.id) ? 'selected' : ''}`}
+                                                        onClick={() => handleGenreToggle(genre.id)}
+                                                    >
+                                                        <span>{genre.name}</span>
+                                                        {uploadFormData.genre_ids.includes(genre.id) && (
+                                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                                                                <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
+                                                            </svg>
+                                                        )}
+                                                    </div>
+                                                ))
+                                            )}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="modal-footer">
+                                <button 
+                                    type="button" 
+                                    className="admin-btn admin-btn-secondary" 
+                                    onClick={handleCloseUploadModal}
+                                    disabled={uploading}
+                                >
+                                    Cancel
+                                </button>
+                                <button 
+                                    type="submit" 
+                                    className="admin-btn admin-btn-primary"
+                                    disabled={uploading || !uploadFormData.title || !uploadFormData.author_id || uploadFormData.genre_ids.length === 0}
+                                >
+                                    {uploading ? (
+                                        <>
+                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style={{marginRight: '0.5rem'}}>
+                                                <path d="M12,4V2A10,10 0 0,0 2,12H4A8,8 0 0,1 12,4Z" />
+                                            </svg>
+                                            Uploading...
+                                        </>
+                                    ) : (
+                                        <>
+                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style={{marginRight: '0.5rem'}}>
+                                                <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
+                                            </svg>
+                                            Upload Audiobook
+                                        </>
+                                    )}
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
         </div>
     )
 }

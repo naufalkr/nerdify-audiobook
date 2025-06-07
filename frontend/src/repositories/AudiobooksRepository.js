@@ -157,6 +157,71 @@ class AudiobooksRepository {
             }
         }
     }
+
+    /**
+     * Get all authors
+     * @param {Object} params - Query parameters
+     */
+    static async getAllAuthors(params = {}) {
+        try {
+            const queryParams = new URLSearchParams()
+            
+            if (params.page) queryParams.append('page', params.page)
+            if (params.limit) queryParams.append('limit', params.limit)
+            if (params.search) queryParams.append('q', params.search)
+
+            const response = await axios.get(`${BASE_URL}/authors?${queryParams}`)
+            
+            // DEBUG: Log response untuk melihat struktur data
+            console.log('Authors API Raw Response:', response.data)
+            console.log('Authors Response Structure:')
+            console.log('- response.data:', response.data)
+            console.log('- response.data.data:', response.data?.data)
+            console.log('- response.data.data.items:', response.data?.data?.items)
+            
+            return {
+                success: true,
+                data: response.data,
+                status: response.status
+            }
+        } catch (error) {
+            console.error('Error fetching authors:', error)
+            return {
+                success: false,
+                error: error.response?.data?.error || error.message,
+                status: error.response?.status || 500
+            }
+        }
+    }
+
+    /**
+     * Get all genres
+     * @param {Object} params - Query parameters
+     */
+    static async getAllGenres(params = {}) {
+        try {
+            const queryParams = new URLSearchParams()
+            
+            if (params.page) queryParams.append('page', params.page)
+            if (params.limit) queryParams.append('limit', params.limit)
+            if (params.search) queryParams.append('q', params.search)
+
+            const response = await axios.get(`${BASE_URL}/genres?${queryParams}`)
+            
+            return {
+                success: true,
+                data: response.data,
+                status: response.status
+            }
+        } catch (error) {
+            console.error('Error fetching genres:', error)
+            return {
+                success: false,
+                error: error.response?.data?.error || error.message,
+                status: error.response?.status || 500
+            }
+        }
+    }
 }
 
 export default AudiobooksRepository
