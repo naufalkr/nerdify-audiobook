@@ -1,0 +1,186 @@
+Tentu, berikut adalah struktur ERD (Entity-Relationship Diagram) lengkap yang dirancang khusus untuk `catalog-service` Anda, berdasarkan file-file yang telah diberikan dan keputusan untuk tidak menggunakan `librivoxPageUrl` dan `youtubeVideoUrl`.
+
+### Entity-Relationship Diagram (ERD) Lengkap
+
+Diagram ini menggambarkan entitas-entitas data utama dan bagaimana mereka saling berhubungan satu sama lain.
+
+```mermaid
+erDiagram
+    AUTHORS {
+        INT id PK
+        VARCHAR name
+    }
+    READERS {
+        INT id PK
+        VARCHAR name
+    }
+    GENRES {
+        INT id PK
+        VARCHAR name
+    }
+    AUDIOBOOKS {
+        INT id PK
+        VARCHAR title
+        INT authorId FK
+        INT readerId FK
+        TEXT description
+        VARCHAR imageUrl
+        VARCHAR language
+        INT yearOfPublishing
+        VARCHAR totalDuration
+    }
+    TRACKS {
+        INT id PK
+        INT audiobookId FK
+        VARCHAR title
+        VARCHAR url
+        VARCHAR duration
+    }
+    AUDIOBOOK_GENRES {
+        INT audiobookId PK, FK
+        INT genreId PK, FK
+    }
+    ANALYTICS {
+        INT id PK
+        INT audiobookId FK
+        VARCHAR userId FK
+        VARCHAR eventType
+        DATETIME eventTimestamp
+    }
+    USERS {
+        VARCHAR id PK
+        VARCHAR role
+    }
+
+    AUDIOBOOKS ||--|{ TRACKS : "memiliki"
+    AUDIOBOOKS }o--o{ AUDIOBOOK_GENRES : "dikategorikan oleh"
+    AUDIOBOOKS ||--o{ AUTHORS : "ditulis oleh"
+    AUDIOBOOKS ||--o{ READERS : "dibacakan oleh"
+    AUDIOBOOKS ||--o{ ANALYTICS : "dicatat dalam"
+    GENRES }o--o{ AUDIOBOOK_GENRES : "mengelompokkan"
+    USERS ||--o{ ANALYTICS : "melakukan"
+
+```
+
+### Deskripsi dan Struktur Tabel Database Lengkap
+
+Berikut adalah rincian setiap tabel dalam ERD, menjelaskan tujuan dan relasinya.
+
+---
+
+#### 1. Tabel `authors`
+Menyimpan data master untuk semua penulis. Ini memungkinkan manajemen metadata penulis secara terpusat.
+- **Data bersumber dari**: `authors.json` dan `audiobooks.json` (field `details.author`).
+
+| Nama Kolom | Tipe Data | Keterangan |
+| --- | --- | --- |
+| `id` | `INT` / `SERIAL` | **Primary Key**: Identifier unik untuk setiap penulis. |
+| `name` | `VARCHAR(255)` | Nama penulis (disarankan unik). |
+| `created_at` | `TIMESTAMP` | Waktu data dibuat. |
+| `updated_at` | `TIMESTAMP` | Waktu data terakhir diubah. |
+
+---
+
+#### 2. Tabel `readers`
+Menyimpan data master untuk para pembaca (narrator) audiobook.
+- **Data bersumber dari**: `readers.json` dan `audiobooks.json` (field `details.reader`).
+
+| Nama Kolom | Tipe Data | Keterangan |
+| --- | --- | --- |
+| `id` | `INT` / `SERIAL` | **Primary Key**: Identifier unik untuk setiap pembaca. |
+| `name` | `VARCHAR(255)` | Nama pembaca (disarankan unik). |
+| `created_at` | `TIMESTAMP` | Waktu data dibuat. |
+| `updated_at` | `TIMESTAMP` | Waktu data terakhir diubah. |
+
+---
+
+#### 3. Tabel `genres`
+Menyimpan data master untuk semua genre yang tersedia.
+- **Data bersumber dari**: `genres.json` dan `audiobooks.json` (field `details.genres`).
+
+| Nama Kolom | Tipe Data | Keterangan |
+| --- | --- | --- |
+| `id` | `INT` / `SERIAL` | **Primary Key**: Identifier unik untuk setiap genre. |
+| `name` | `VARCHAR(100)` | Nama genre (disarankan unik). |
+| `created_at` | `TIMESTAMP` | Waktu data dibuat. |
+| `updated_at` | `TIMESTAMP` | Waktu data terakhir diubah. |
+
+---
+
+#### 4. Tabel `audiobooks`
+Tabel pusat yang berisi informasi detail tentang setiap audiobook.
+- **Relasi**:
+    - **One-to-Many** dengan `authors` (satu penulis bisa menulis banyak buku).
+    - **One-to-Many** dengan `readers` (satu pembaca bisa membacakan banyak buku).
+- **Data bersumber dari**: `audiobooks.json` dan `updateAudiobooks.json`.
+
+| Nama Kolom | Tipe Data | Keterangan |
+| --- | --- | --- |
+| `id` | `INT` / `SERIAL` | **Primary Key**: Identifier unik untuk audiobook. |
+| `title` | `VARCHAR(255)` | Judul audiobook. |
+| `author_id` | `INT` | **Foreign Key** yang merujuk ke `authors.id`. |
+| `reader_id` | `INT` | **Foreign Key** yang merujuk ke `readers.id`. |
+| `description` | `TEXT` | Sinopsis atau deskripsi audiobook. |
+| `image_url` | `VARCHAR(255)` | URL untuk gambar sampul (cover). |
+| `language` | `VARCHAR(50)` | Bahasa audiobook, contoh: "English". |
+| `year_of_publishing`| `INT` | Tahun penerbitan. |
+| `total_duration` | `VARCHAR(50)` | Total durasi audiobook (misal: "10 hr 23 min"). |
+| `created_at` | `TIMESTAMP` | Waktu data dibuat. |
+| `updated_at` | `TIMESTAMP` | Waktu data terakhir diubah. |
+
+---
+
+#### 5. Tabel `tracks`
+Menyimpan setiap file audio (trek atau bab) yang terkait dengan sebuah audiobook.
+- **Relasi**: **One-to-Many** dengan `audiobooks` (satu audiobook memiliki banyak trek).
+- **Data bersumber dari**: `audiobooks.json` (array `tracks`).
+
+| Nama Kolom | Tipe Data | Keterangan |
+| --- | --- | --- |
+| `id` | `INT` / `SERIAL` | **Primary Key**: Identifier unik untuk setiap trek. |
+| `audiobook_id`| `INT` | **Foreign Key** yang merujuk ke `audiobooks.id`. |
+| `title` | `VARCHAR(255)` | Judul trek (misal: "Chapter 01"). |
+| `url` | `VARCHAR(255)` | URL ke file audio MP3. |
+| `duration` | `VARCHAR(20)` | Durasi trek (misal: "00:04:44"). |
+| `created_at` | `TIMESTAMP` | Waktu data dibuat. |
+| `updated_at` | `TIMESTAMP` | Waktu data terakhir diubah. |
+
+---
+
+#### 6. Tabel `audiobook_genres`
+Tabel pivot untuk mengelola relasi **Many-to-Many** antara audiobooks dan genres.
+- **Relasi**: Menghubungkan `audiobooks` dan `genres`.
+
+| Nama Kolom | Tipe Data | Keterangan |
+| --- | --- | --- |
+| `audiobook_id`| `INT` | **Composite PK & FK** ke `audiobooks.id`. |
+| `genre_id` | `INT` | **Composite PK & FK** ke `genres.id`. |
+
+---
+
+#### 7. Tabel `users`
+Tabel sederhana untuk menyimpan informasi dasar pengguna yang relevan untuk *catalog-service*, terutama untuk keperluan analitik. Data utamanya dikelola oleh `auth-user-service`.
+- **Data bersumber dari**: Response validasi API eksternal (contoh di deskripsi Anda) dan `superadmin_middleware.go`.
+
+| Nama Kolom | Tipe Data | Keterangan |
+| --- | --- | --- |
+| `id` | `VARCHAR(255)` | **Primary Key**: UUID pengguna, cocok dengan `userID` dari `auth-user-service`. |
+| `role` | `VARCHAR(50)` | Peran pengguna (misal: "SUPERADMIN"). |
+| `created_at` | `TIMESTAMP` | Waktu pengguna pertama kali dicatat di service ini. |
+| `updated_at` | `TIMESTAMP` | Waktu data terakhir diubah. |
+
+---
+
+#### 8. Tabel `analytics`
+Merekam jejak aktivitas pengguna untuk fitur dasbor analitik.
+- **Relasi**:
+    - **Many-to-One** dengan `audiobooks` (banyak log bisa merujuk ke satu audiobook).
+    - **Many-to-One** dengan `users` (banyak log bisa dimiliki oleh satu user).
+
+| Nama Kolom | Tipe Data | Keterangan |
+| --- | --- | --- |
+| `id` | `BIGINT` / `BIGSERIAL`| **Primary Key**: Identifier unik untuk setiap log event. |
+| `audiobook_id`| `INT` | **Foreign Key** ke `audiobooks.id`. |
+| `user_id` | `VARCHAR(255)` | **Foreign Key** ke `users.id`. |
+| `event_type` | `VARCHAR(50)` | Tipe aktivitas (misal: 'VIEW', 'PLAY_START', 'PLAY_FINISH'). |
+| `event_timestamp`| `TIMESTAMP` | Waktu pasti saat aktivitas terjadi. |
