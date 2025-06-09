@@ -21,20 +21,17 @@ This project is developed as a final project for Software Engineering (PPL) cour
 
 This project implements several design patterns as part of Software Engineering (PPL) coursework:
 
-### Factory Pattern
-- **Purpose**: Creates instance objects without exposing class implementation
-- **Implementation**: Applied to `AudiobookPlayer` and `UserSessionManager` objects with specific configurations
-- **Location**: Used in audio player initialization and user session management
-
-### Observer Pattern
-- **Purpose**: Monitors state changes across the application
-- **Implementation**: Tracks audiobook playback status changes and user progress updates
-- **Location**: Audio player state management and progress tracking system
-
 ### Repository Pattern
-- **Purpose**: Separates data access logic from UI components
-- **Implementation**: Handles data operations from remote API, database, and cache
-- **Location**: API service layer, data persistence, and state management
+- **Purpose**: Separates data access logic from UI components and provides a centralized way to handle data operations
+- **Implementation**: Applied across all data access layers with base repository class and specialized repositories
+
+### Singleton Pattern
+- **Purpose**: Ensures single instance creation and provides global access point for logging utilities
+- **Implementation**: Applied to logging and utility classes that need to maintain state across the application
+
+### Factory Pattern
+- **Purpose**: Creates repository instances with custom configurations without exposing implementation details
+- **Implementation**: Applied to repository creation and user session management
 
 
 ## Key Features

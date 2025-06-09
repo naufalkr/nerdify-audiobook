@@ -1,9 +1,16 @@
 import axios from 'axios'
 import BaseRepository from './BaseRepository'
+import SingletonLoggerUtil from '../utils/singletonLogger'
 
 class SystemRepository extends BaseRepository {
     constructor() {
         super('SystemRepository')
+        
+        // Log singleton instance creation
+        const instanceId = `SystemRepository_${Date.now()}`
+        const estimatedMemorySize = 1024 // Estimated memory footprint in bytes
+        SingletonLoggerUtil.logInstanceCreation('SystemRepository', instanceId, estimatedMemorySize)
+        
         this.apiKey = process.env.REACT_APP_API_KEY || 'system-monitoring-api-key'
     }
 
@@ -15,60 +22,142 @@ class SystemRepository extends BaseRepository {
         }
     }
 
+    // Cache implementation with logging
+    setCache(key, data) {
+        try {
+            const serialized = JSON.stringify(data)
+            localStorage.setItem(`system_cache_${key}`, serialized)
+            
+            // Log cache operation
+            SingletonLoggerUtil.logCacheOperation(
+                'SystemRepository',
+                'set',
+                key,
+                false,
+                serialized.length
+            )
+        } catch (error) {
+            console.error('SystemRepository: Cache set error:', error)
+        }
+    }
+
+    getFromCache(key) {
+        try {
+            const cached = localStorage.getItem(`system_cache_${key}`)
+            const result = cached ? JSON.parse(cached) : null
+            
+            // Log cache operation
+            SingletonLoggerUtil.logCacheOperation(
+                'SystemRepository',
+                'get',
+                key,
+                !!result,
+                result ? JSON.stringify(result).length : 0
+            )
+            
+            return result
+        } catch (error) {
+            console.error('SystemRepository: Cache get error:', error)
+            return null
+        }
+    }
+
     // Get comprehensive system health
     async getSystemHealth() {
-        return this.loggedCall('getSystemHealth', async () => {
-            const response = await axios.get(
-                `${this.baseURL}/api/system/health`,
-                { 
-                    headers: this.getHeaders(),
-                    timeout: 10000 // 10 second timeout
-                }
-            )
-
-            return {
-                status: this.normalizeStatus(response.data.status),
-                uptime: response.data.uptime || 0,
-                version: response.data.version || '1.0.0',
-                environment: response.data.environment || 'production',
-                services: this.normalizeServices(response.data.services || []),
-                lastChecked: new Date().toISOString()
+        const startTime = SingletonLoggerUtil.logMethodCall('SystemRepository', 'getSystemHealth')
+        
+        try {
+            // Check cache first
+            const cacheKey = 'system_health'
+            const cached = this.getFromCache(cacheKey)
+            if (cached && (Date.now() - cached.timestamp < 60000)) { // 1 minute cache
+                SingletonLoggerUtil.logMethodEnd('SystemRepository', 'getSystemHealth', startTime, 'success', cached.data)
+                return cached.data
             }
-        })
+            
+            const result = await this.loggedCall('getSystemHealth', async () => {
+                const response = await axios.get(
+                    `${this.baseURL}/api/system/health`,
+                    { 
+                        headers: this.getHeaders(),
+                        timeout: 10000 // 10 second timeout
+                    }
+                )
+
+                return {
+                    status: this.normalizeStatus(response.data.status),
+                    uptime: response.data.uptime || 0,
+                    version: response.data.version || '1.0.0',
+                    environment: response.data.environment || 'production',
+                    services: this.normalizeServices(response.data.services || []),
+                    lastChecked: new Date().toISOString()
+                }
+            })
+            
+            // Cache the result
+            this.setCache(cacheKey, { data: result, timestamp: Date.now() })
+            
+            SingletonLoggerUtil.logMethodEnd('SystemRepository', 'getSystemHealth', startTime, 'success', result)
+            return result
+        } catch (error) {
+            SingletonLoggerUtil.logMethodEnd('SystemRepository', 'getSystemHealth', startTime, 'error', error.message)
+            throw error
+        }
     }
 
     async getPerformanceMetrics() {
-        return this.loggedCall('getPerformanceMetrics', async () => {
-            const response = await axios.get(
-                `${this.baseURL}/api/system/metrics`,
-                { headers: this.getHeaders() }
-            )
-
-            return {
-                cpu: {
-                    usage: response.data.cpu?.usage || 0,
-                    cores: response.data.cpu?.cores || 1
-                },
-                memory: {
-                    used: response.data.memory?.used || 0,
-                    total: response.data.memory?.total || 0,
-                    percentage: response.data.memory?.percentage || 0
-                },
-                network: {
-                    inbound: response.data.network?.inbound || 0,
-                    outbound: response.data.network?.outbound || 0
-                },
-                requests: {
-                    total: response.data.requests?.total || 0,
-                    perSecond: response.data.requests?.perSecond || 0,
-                    averageResponseTime: response.data.requests?.averageResponseTime || 0
-                },
-                errors: {
-                    total: response.data.errors?.total || 0,
-                    rate: response.data.errors?.rate || 0
-                }
+        const startTime = SingletonLoggerUtil.logMethodCall('SystemRepository', 'getPerformanceMetrics')
+        
+        try {
+            // Check cache first
+            const cacheKey = 'performance_metrics'
+            const cached = this.getFromCache(cacheKey)
+            if (cached && (Date.now() - cached.timestamp < 30000)) { // 30 seconds cache
+                SingletonLoggerUtil.logMethodEnd('SystemRepository', 'getPerformanceMetrics', startTime, 'success', cached.data)
+                return cached.data
             }
-        })
+            
+            const result = await this.loggedCall('getPerformanceMetrics', async () => {
+                const response = await axios.get(
+                    `${this.baseURL}/api/system/metrics`,
+                    { headers: this.getHeaders() }
+                )
+
+                return {
+                    cpu: {
+                        usage: response.data.cpu?.usage || 0,
+                        cores: response.data.cpu?.cores || 1
+                    },
+                    memory: {
+                        used: response.data.memory?.used || 0,
+                        total: response.data.memory?.total || 0,
+                        percentage: response.data.memory?.percentage || 0
+                    },
+                    network: {
+                        inbound: response.data.network?.inbound || 0,
+                        outbound: response.data.network?.outbound || 0
+                    },
+                    requests: {
+                        total: response.data.requests?.total || 0,
+                        perSecond: response.data.requests?.perSecond || 0,
+                        averageResponseTime: response.data.requests?.averageResponseTime || 0
+                    },
+                    errors: {
+                        total: response.data.errors?.total || 0,
+                        rate: response.data.errors?.rate || 0
+                    }
+                }
+            })
+            
+            // Cache the result
+            this.setCache(cacheKey, { data: result, timestamp: Date.now() })
+            
+            SingletonLoggerUtil.logMethodEnd('SystemRepository', 'getPerformanceMetrics', startTime, 'success', result)
+            return result
+        } catch (error) {
+            SingletonLoggerUtil.logMethodEnd('SystemRepository', 'getPerformanceMetrics', startTime, 'error', error.message)
+            throw error
+        }
     }
 
     // Get database health and statistics
@@ -309,7 +398,17 @@ class SystemRepository extends BaseRepository {
     // Cache management
     clearSystemCache() {
         const keys = Object.keys(localStorage).filter(key => key.startsWith('system_cache_'))
-        keys.forEach(key => localStorage.removeItem(key))
+        keys.forEach(key => {
+            localStorage.removeItem(key)
+            // Log cache clear operation
+            SingletonLoggerUtil.logCacheOperation(
+                'SystemRepository',
+                'clear',
+                key.replace('system_cache_', ''),
+                false,
+                0
+            )
+        })
         console.log('SystemRepository: System cache cleared')
     }
 }

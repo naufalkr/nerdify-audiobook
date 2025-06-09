@@ -12,6 +12,7 @@ import ListingPage from './pages/ListingPage'
 import SideMenu from './components/SideMenu'
 import Player from './components/Player'
 import RepositoryLogger from './components/RepositoryLogger/RepositoryLogger'
+import SingletonLogger from './components/SingletonLogger/SingletonLogger'
 
 // Import route protections
 import { ProtectedRoute, SuperAdminRoute, UserRoute } from './components/ProtectedRoute'
@@ -82,6 +83,11 @@ function App() {
       {/* Repository Logger - only show in development or demo mode */}
       {(process.env.NODE_ENV === 'development' || process.env.REACT_APP_SHOW_REPO_LOGGER === 'true') && (
         <RepositoryLogger />
+      )}
+      
+      {/* Singleton Logger - only show in development or demo mode */}
+      {(process.env.NODE_ENV === 'development' || process.env.REACT_APP_SHOW_SINGLETON_LOGGER === 'true') && (
+        <SingletonLogger />
       )}
     </GlobalProvider>
   )

@@ -1,10 +1,16 @@
 import axios from 'axios'
 import BaseRepository from './BaseRepository'
+import SingletonLoggerUtil from '../utils/singletonLogger'
 
 class AdminRepository extends BaseRepository {
     constructor() {
         super('AdminRepository')
         this.apiKey = process.env.REACT_APP_API_KEY || 'admin-dashboard-api-key'
+        
+        // Log singleton instance creation
+        const instanceId = `AdminRepository_${Date.now()}`
+        const estimatedMemorySize = 1024 // Estimated memory footprint in bytes
+        SingletonLoggerUtil.logInstanceCreation('AdminRepository', instanceId, estimatedMemorySize)
     }
 
     getHeaders() {
@@ -189,44 +195,166 @@ class AdminRepository extends BaseRepository {
 
     // Real-time stats with caching
     async getRealTimeStats(useCache = true) {
-        const cacheKey = 'admin_stats_cache'
-        const cacheTimeout = 30000 // 30 seconds
-
-        if (useCache) {
-            const cached = this.getFromCache(cacheKey)
-            if (cached && (Date.now() - cached.timestamp < cacheTimeout)) {
-                console.log('AdminRepository: Using cached stats')
-                return cached.data
-            }
-        }
-
-        console.log('AdminRepository: Fetching fresh stats...')
-        const stats = await this.getSystemStats()
+        const startTime = SingletonLoggerUtil.logMethodCall('AdminRepository', 'getRealTimeStats', { useCache })
         
-        this.setCache(cacheKey, {
-            data: stats,
-            timestamp: Date.now()
-        })
+        try {
+            const cacheKey = 'admin_stats_cache'
+            const cacheTimeout = 30000 // 30 seconds
 
-        return stats
+            if (useCache) {
+                const cached = this.getFromCache(cacheKey)
+                if (cached && (Date.now() - cached.timestamp < cacheTimeout)) {
+                    console.log('AdminRepository: Using cached stats')
+                    SingletonLoggerUtil.logMethodEnd('AdminRepository', 'getRealTimeStats', startTime, 'success', cached.data)
+                    return cached.data
+                }
+            }
+
+            console.log('AdminRepository: Fetching fresh stats...')
+            const stats = await this.getSystemStats()
+            
+            this.setCache(cacheKey, {
+                data: stats,
+                timestamp: Date.now()
+            })
+
+            SingletonLoggerUtil.logMethodEnd('AdminRepository', 'getRealTimeStats', startTime, 'success', stats)
+            return stats
+        } catch (error) {
+            SingletonLoggerUtil.logMethodEnd('AdminRepository', 'getRealTimeStats', startTime, 'error', null)
+            throw error
+        }
+    }
+
+    // Enhanced getSystemStats with logging
+    async getSystemStats() {
+        const startTime = SingletonLoggerUtil.logMethodCall('AdminRepository', 'getSystemStats')
+        
+        try {
+            const result = await this.loggedCall('getSystemStats', async () => {
+                const [userStats, systemHealth, sessionStats] = await Promise.allSettled([
+                    this.getUserStats(),
+                    this.getSystemHealth(),
+                    this.getActiveSessionStats()
+                ])
+                
+                return {
+                    totalUsers: userStats.status === 'fulfilled' ? userStats.value.totalUsers : 0,
+                    activeSessions: sessionStats.status === 'fulfilled' ? sessionStats.value.activeSessions : 0,
+                    systemStatus: systemHealth.status === 'fulfilled' ? systemHealth.value.status : 'unknown',
+                    lastUpdated: new Date().toISOString()
+                }
+            })
+            
+            SingletonLoggerUtil.logMethodEnd('AdminRepository', 'getSystemStats', startTime, 'success', result)
+            return result
+        } catch (error) {
+            SingletonLoggerUtil.logMethodEnd('AdminRepository', 'getSystemStats', startTime, 'error', null)
+            throw error
+        }
     }
 
     // Simple cache implementation
+    // Enhanced cache methods with singleton logging
     getFromCache(key) {
         try {
             const cached = localStorage.getItem(`admin_cache_${key}`)
-            return cached ? JSON.parse(cached) : null
+            const result = cached ? JSON.parse(cached) : null
+            
+            // Log cache operation
+            SingletonLoggerUtil.logCacheOperation(
+                'AdminRepository',
+                'get',
+                key,
+                !!result,
+                result ? JSON.stringify(result).length : 0
+            )
+            
+            return result
         } catch (error) {
             console.warn('Cache read error:', error)
+            SingletonLoggerUtil.logCacheOperation('AdminRepository', 'get', key, false, 0)
             return null
         }
     }
 
     setCache(key, data) {
         try {
-            localStorage.setItem(`admin_cache_${key}`, JSON.stringify(data))
+            const serialized = JSON.stringify(data)
+            localStorage.setItem(`admin_cache_${key}`, serialized)
+            
+            // Log cache operation
+            SingletonLoggerUtil.logCacheOperation(
+                'AdminRepository',
+                'set',
+                key,
+                true,
+                serialized.length
+            )
         } catch (error) {
             console.warn('Cache write error:', error)
+            SingletonLoggerUtil.logCacheOperation('AdminRepository', 'set', key, false, 0)
+        }
+    }
+
+    // Enhanced real-time stats with singleton logging
+    async getRealTimeStats(useCache = true) {
+        const startTime = SingletonLoggerUtil.logMethodCall('AdminRepository', 'getRealTimeStats', { useCache })
+        
+        try {
+            const cacheKey = 'admin_stats_cache'
+            const cacheTimeout = 30000 // 30 seconds
+
+            if (useCache) {
+                const cached = this.getFromCache(cacheKey)
+                if (cached && (Date.now() - cached.timestamp < cacheTimeout)) {
+                    console.log('AdminRepository: Using cached stats')
+                    SingletonLoggerUtil.logMethodEnd('AdminRepository', 'getRealTimeStats', startTime, 'success', cached.data)
+                    return cached.data
+                }
+            }
+
+            console.log('AdminRepository: Fetching fresh stats...')
+            const stats = await this.getSystemStats()
+            
+            this.setCache(cacheKey, {
+                data: stats,
+                timestamp: Date.now()
+            })
+
+            SingletonLoggerUtil.logMethodEnd('AdminRepository', 'getRealTimeStats', startTime, 'success', stats)
+            return stats
+        } catch (error) {
+            SingletonLoggerUtil.logMethodEnd('AdminRepository', 'getRealTimeStats', startTime, 'error', null)
+            throw error
+        }
+    }
+
+    // Enhanced getSystemStats with logging
+    async getSystemStats() {
+        const startTime = SingletonLoggerUtil.logMethodCall('AdminRepository', 'getSystemStats')
+        
+        try {
+            const result = await this.loggedCall('getSystemStats', async () => {
+                const [userStats, systemHealth, sessionStats] = await Promise.allSettled([
+                    this.getUserStats(),
+                    this.getSystemHealth(),
+                    this.getActiveSessionStats()
+                ])
+                
+                return {
+                    totalUsers: userStats.status === 'fulfilled' ? userStats.value.totalUsers : 0,
+                    activeSessions: sessionStats.status === 'fulfilled' ? sessionStats.value.activeSessions : 0,
+                    systemStatus: systemHealth.status === 'fulfilled' ? systemHealth.value.status : 'unknown',
+                    lastUpdated: new Date().toISOString()
+                }
+            })
+            
+            SingletonLoggerUtil.logMethodEnd('AdminRepository', 'getSystemStats', startTime, 'success', result)
+            return result
+        } catch (error) {
+            SingletonLoggerUtil.logMethodEnd('AdminRepository', 'getSystemStats', startTime, 'error', null)
+            throw error
         }
     }
 

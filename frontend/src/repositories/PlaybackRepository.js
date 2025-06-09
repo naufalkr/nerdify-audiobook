@@ -1,10 +1,62 @@
 import axios from 'axios'
 import BaseRepository from './BaseRepository'
+import SingletonLoggerUtil from '../utils/singletonLogger'
 
 class PlaybackRepository extends BaseRepository {
     constructor() {
         super('PlaybackRepository')
+        
+        // Log singleton instance creation
+        const instanceId = `PlaybackRepository_${Date.now()}`
+        const estimatedMemorySize = 512 // Estimated memory footprint in bytes
+        SingletonLoggerUtil.logInstanceCreation('PlaybackRepository', instanceId, estimatedMemorySize)
+        
         this.contentBaseURL = 'http://localhost:3163/api/v1' // Content Management Service
+        this.cache = new Map()
+        this.cacheTimeout = 600000 // 10 minutes for track data
+    }
+
+    // Cache implementation with logging
+    setCache(key, data) {
+        try {
+            const cacheData = {
+                data,
+                timestamp: Date.now()
+            }
+            this.cache.set(key, cacheData)
+            
+            // Log cache operation
+            SingletonLoggerUtil.logCacheOperation(
+                'PlaybackRepository',
+                'set',
+                key,
+                false,
+                JSON.stringify(data).length
+            )
+        } catch (error) {
+            console.error('PlaybackRepository: Cache set error:', error)
+        }
+    }
+
+    getFromCache(key) {
+        try {
+            const cached = this.cache.get(key)
+            const isValid = cached && (Date.now() - cached.timestamp < this.cacheTimeout)
+            
+            // Log cache operation
+            SingletonLoggerUtil.logCacheOperation(
+                'PlaybackRepository',
+                'get',
+                key,
+                !!isValid,
+                isValid ? JSON.stringify(cached.data).length : 0
+            )
+            
+            return isValid ? cached.data : null
+        } catch (error) {
+            console.error('PlaybackRepository: Cache get error:', error)
+            return null
+        }
     }
 
     /**
@@ -12,19 +64,40 @@ class PlaybackRepository extends BaseRepository {
      * @param {number} trackId - Track ID
      */
     async getTrackById(trackId) {
-        return this.loggedCall('getTrackById', async () => {
-            console.log(`🎵 Fetching track data for ID: ${trackId}`)
-            
-            const response = await axios.get(`${this.contentBaseURL}/tracks/${trackId}`)
-            
-            console.log('✅ Track data received:', response.data)
-            
-            return {
-                success: true,
-                data: response.data,
-                status: response.status
+        const startTime = SingletonLoggerUtil.logMethodCall('PlaybackRepository', 'getTrackById', { trackId })
+        
+        try {
+            // Check cache first
+            const cacheKey = `track_${trackId}`
+            const cached = this.getFromCache(cacheKey)
+            if (cached) {
+                SingletonLoggerUtil.logMethodEnd('PlaybackRepository', 'getTrackById', startTime, 'success', cached)
+                return cached
             }
-        }, { trackId })
+            
+            const result = await this.loggedCall('getTrackById', async () => {
+                console.log(`🎵 Fetching track data for ID: ${trackId}`)
+                
+                const response = await axios.get(`${this.contentBaseURL}/tracks/${trackId}`)
+                
+                console.log('✅ Track data received:', response.data)
+                
+                return {
+                    success: true,
+                    data: response.data,
+                    status: response.status
+                }
+            }, { trackId })
+            
+            // Cache the result
+            this.setCache(cacheKey, result)
+            
+            SingletonLoggerUtil.logMethodEnd('PlaybackRepository', 'getTrackById', startTime, 'success', result)
+            return result
+        } catch (error) {
+            SingletonLoggerUtil.logMethodEnd('PlaybackRepository', 'getTrackById', startTime, 'error', error.message)
+            throw error
+        }
     }
 
     /**
@@ -32,19 +105,40 @@ class PlaybackRepository extends BaseRepository {
      * @param {number} audiobookId - Audiobook ID
      */
     async getTracksByAudiobookId(audiobookId) {
-        return this.loggedCall('getTracksByAudiobookId', async () => {
-            console.log(`🎵 Fetching tracks for audiobook ID: ${audiobookId}`)
-            
-            const response = await axios.get(`${this.contentBaseURL}/tracks/audiobook/${audiobookId}`)
-            
-            console.log('✅ Tracks data received:', response.data)
-            
-            return {
-                success: true,
-                data: response.data,
-                status: response.status
+        const startTime = SingletonLoggerUtil.logMethodCall('PlaybackRepository', 'getTracksByAudiobookId', { audiobookId })
+        
+        try {
+            // Check cache first
+            const cacheKey = `tracks_audiobook_${audiobookId}`
+            const cached = this.getFromCache(cacheKey)
+            if (cached) {
+                SingletonLoggerUtil.logMethodEnd('PlaybackRepository', 'getTracksByAudiobookId', startTime, 'success', cached)
+                return cached
             }
-        }, { audiobookId })
+            
+            const result = await this.loggedCall('getTracksByAudiobookId', async () => {
+                console.log(`🎵 Fetching tracks for audiobook ID: ${audiobookId}`)
+                
+                const response = await axios.get(`${this.contentBaseURL}/tracks/audiobook/${audiobookId}`)
+                
+                console.log('✅ Tracks data received:', response.data)
+                
+                return {
+                    success: true,
+                    data: response.data,
+                    status: response.status
+                }
+            }, { audiobookId })
+            
+            // Cache the result
+            this.setCache(cacheKey, result)
+            
+            SingletonLoggerUtil.logMethodEnd('PlaybackRepository', 'getTracksByAudiobookId', startTime, 'success', result)
+            return result
+        } catch (error) {
+            SingletonLoggerUtil.logMethodEnd('PlaybackRepository', 'getTracksByAudiobookId', startTime, 'error', error.message)
+            throw error
+        }
     }
 
     /**
@@ -256,6 +350,15 @@ class PlaybackRepository extends BaseRepository {
     static clearPlaybackProgress(trackId) {
         try {
             localStorage.removeItem(`playback_progress_${trackId}`)
+            
+            // Log cache operation
+            SingletonLoggerUtil.logCacheOperation(
+                'PlaybackRepository',
+                'clear',
+                `playback_progress_${trackId}`,
+                false,
+                0
+            )
         } catch (error) {
             console.error('Error clearing playback progress:', error)
         }

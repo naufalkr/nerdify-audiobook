@@ -1,10 +1,62 @@
 import axios from 'axios'
 import BaseRepository from './BaseRepository'
+import SingletonLoggerUtil from '../utils/singletonLogger'
 
 class AudiobooksRepository extends BaseRepository {
     constructor() {
         super('AudiobooksRepository')
+        
+        // Log singleton instance creation
+        const instanceId = `AudiobooksRepository_${Date.now()}`
+        const estimatedMemorySize = 768 // Estimated memory footprint in bytes
+        SingletonLoggerUtil.logInstanceCreation('AudiobooksRepository', instanceId, estimatedMemorySize)
+        
         this.contentBaseURL = 'http://localhost:3163/api/v1' // Content Management Service
+        this.cache = new Map()
+        this.cacheTimeout = 300000 // 5 minutes
+    }
+
+    // Cache implementation with logging
+    setCache(key, data) {
+        try {
+            const cacheData = {
+                data,
+                timestamp: Date.now()
+            }
+            this.cache.set(key, cacheData)
+            
+            // Log cache operation
+            SingletonLoggerUtil.logCacheOperation(
+                'AudiobooksRepository',
+                'set',
+                key,
+                false,
+                JSON.stringify(data).length
+            )
+        } catch (error) {
+            console.error('AudiobooksRepository: Cache set error:', error)
+        }
+    }
+
+    getFromCache(key) {
+        try {
+            const cached = this.cache.get(key)
+            const isValid = cached && (Date.now() - cached.timestamp < this.cacheTimeout)
+            
+            // Log cache operation
+            SingletonLoggerUtil.logCacheOperation(
+                'AudiobooksRepository',
+                'get',
+                key,
+                !!isValid,
+                isValid ? JSON.stringify(cached.data).length : 0
+            )
+            
+            return isValid ? cached.data : null
+        } catch (error) {
+            console.error('AudiobooksRepository: Cache get error:', error)
+            return null
+        }
     }
 
     /**
@@ -15,21 +67,42 @@ class AudiobooksRepository extends BaseRepository {
      * @param {string} params.search - Search query
      */
     async getAllAudiobooks(params = {}) {
-        return this.loggedCall('getAllAudiobooks', async () => {
-            const queryParams = new URLSearchParams()
-            
-            if (params.page) queryParams.append('page', params.page)
-            if (params.limit) queryParams.append('limit', params.limit)
-            if (params.search) queryParams.append('q', params.search)
-
-            const response = await axios.get(`${this.contentBaseURL}/audiobooks?${queryParams}`)
-            
-            return {
-                success: true,
-                data: response.data,
-                status: response.status
+        const startTime = SingletonLoggerUtil.logMethodCall('AudiobooksRepository', 'getAllAudiobooks', params)
+        
+        try {
+            // Check cache first
+            const cacheKey = `audiobooks_${JSON.stringify(params)}`
+            const cached = this.getFromCache(cacheKey)
+            if (cached) {
+                SingletonLoggerUtil.logMethodEnd('AudiobooksRepository', 'getAllAudiobooks', startTime, 'success', cached)
+                return cached
             }
-        }, params)
+            
+            const result = await this.loggedCall('getAllAudiobooks', async () => {
+                const queryParams = new URLSearchParams()
+                
+                if (params.page) queryParams.append('page', params.page)
+                if (params.limit) queryParams.append('limit', params.limit)
+                if (params.search) queryParams.append('q', params.search)
+
+                const response = await axios.get(`${this.contentBaseURL}/audiobooks?${queryParams}`)
+                
+                return {
+                    success: true,
+                    data: response.data,
+                    status: response.status
+                }
+            }, params)
+            
+            // Cache the result
+            this.setCache(cacheKey, result)
+            
+            SingletonLoggerUtil.logMethodEnd('AudiobooksRepository', 'getAllAudiobooks', startTime, 'success', result)
+            return result
+        } catch (error) {
+            SingletonLoggerUtil.logMethodEnd('AudiobooksRepository', 'getAllAudiobooks', startTime, 'error', error.message)
+            throw error
+        }
     }
 
     /**
@@ -37,15 +110,36 @@ class AudiobooksRepository extends BaseRepository {
      * @param {number} id - Audiobook ID
      */
     async getAudiobookById(id) {
-        return this.loggedCall('getAudiobookById', async () => {
-            const response = await axios.get(`${this.contentBaseURL}/audiobooks/${id}`)
-            
-            return {
-                success: true,
-                data: response.data,
-                status: response.status
+        const startTime = SingletonLoggerUtil.logMethodCall('AudiobooksRepository', 'getAudiobookById', { id })
+        
+        try {
+            // Check cache first
+            const cacheKey = `audiobook_${id}`
+            const cached = this.getFromCache(cacheKey)
+            if (cached) {
+                SingletonLoggerUtil.logMethodEnd('AudiobooksRepository', 'getAudiobookById', startTime, 'success', cached)
+                return cached
             }
-        }, { id })
+            
+            const result = await this.loggedCall('getAudiobookById', async () => {
+                const response = await axios.get(`${this.contentBaseURL}/audiobooks/${id}`)
+                
+                return {
+                    success: true,
+                    data: response.data,
+                    status: response.status
+                }
+            }, { id })
+            
+            // Cache the result
+            this.setCache(cacheKey, result)
+            
+            SingletonLoggerUtil.logMethodEnd('AudiobooksRepository', 'getAudiobookById', startTime, 'success', result)
+            return result
+        } catch (error) {
+            SingletonLoggerUtil.logMethodEnd('AudiobooksRepository', 'getAudiobookById', startTime, 'error', error.message)
+            throw error
+        }
     }
 
     /**
@@ -162,21 +256,42 @@ class AudiobooksRepository extends BaseRepository {
      * @param {Object} params - Query parameters
      */
     async getAllGenres(params = {}) {
-        return this.loggedCall('getAllGenres', async () => {
-            const queryParams = new URLSearchParams()
-            
-            if (params.page) queryParams.append('page', params.page)
-            if (params.limit) queryParams.append('limit', params.limit)
-            if (params.search) queryParams.append('q', params.search)
-
-            const response = await axios.get(`${this.contentBaseURL}/genres?${queryParams}`)
-            
-            return {
-                success: true,
-                data: response.data,
-                status: response.status
+        const startTime = SingletonLoggerUtil.logMethodCall('AudiobooksRepository', 'getAllGenres', params)
+        
+        try {
+            // Check cache first
+            const cacheKey = `genres_${JSON.stringify(params)}`
+            const cached = this.getFromCache(cacheKey)
+            if (cached) {
+                SingletonLoggerUtil.logMethodEnd('AudiobooksRepository', 'getAllGenres', startTime, 'success', cached)
+                return cached
             }
-        })
+            
+            const result = await this.loggedCall('getAllGenres', async () => {
+                const queryParams = new URLSearchParams()
+                
+                if (params.page) queryParams.append('page', params.page)
+                if (params.limit) queryParams.append('limit', params.limit)
+                if (params.search) queryParams.append('q', params.search)
+
+                const response = await axios.get(`${this.contentBaseURL}/genres?${queryParams}`)
+                
+                return {
+                    success: true,
+                    data: response.data,
+                    status: response.status
+                }
+            })
+            
+            // Cache the result
+            this.setCache(cacheKey, result)
+            
+            SingletonLoggerUtil.logMethodEnd('AudiobooksRepository', 'getAllGenres', startTime, 'success', result)
+            return result
+        } catch (error) {
+            SingletonLoggerUtil.logMethodEnd('AudiobooksRepository', 'getAllGenres', startTime, 'error', error.message)
+            throw error
+        }
     }
 }
 
