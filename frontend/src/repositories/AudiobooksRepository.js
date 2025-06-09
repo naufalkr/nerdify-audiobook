@@ -1,8 +1,12 @@
 import axios from 'axios'
+import BaseRepository from './BaseRepository'
 
-const BASE_URL = 'http://localhost:3163/api/v1'
+class AudiobooksRepository extends BaseRepository {
+    constructor() {
+        super('AudiobooksRepository')
+        this.contentBaseURL = 'http://localhost:3163/api/v1' // Content Management Service
+    }
 
-class AudiobooksRepository {
     /**
      * Get all audiobooks
      * @param {Object} params - Query parameters
@@ -10,122 +14,95 @@ class AudiobooksRepository {
      * @param {number} params.limit - Items per page
      * @param {string} params.search - Search query
      */
-    static async getAllAudiobooks(params = {}) {
-        try {
+    async getAllAudiobooks(params = {}) {
+        return this.loggedCall('getAllAudiobooks', async () => {
             const queryParams = new URLSearchParams()
             
             if (params.page) queryParams.append('page', params.page)
             if (params.limit) queryParams.append('limit', params.limit)
             if (params.search) queryParams.append('q', params.search)
 
-            const response = await axios.get(`${BASE_URL}/audiobooks?${queryParams}`)
+            const response = await axios.get(`${this.contentBaseURL}/audiobooks?${queryParams}`)
             
             return {
                 success: true,
                 data: response.data,
                 status: response.status
             }
-        } catch (error) {
-            console.error('Error fetching audiobooks:', error)
-            return {
-                success: false,
-                error: error.response?.data?.error || error.message,
-                status: error.response?.status || 500
-            }
-        }
+        }, params)
     }
 
     /**
      * Get audiobook by ID
      * @param {number} id - Audiobook ID
      */
-    static async getAudiobookById(id) {
-        try {
-            const response = await axios.get(`${BASE_URL}/audiobooks/${id}`)
+    async getAudiobookById(id) {
+        return this.loggedCall('getAudiobookById', async () => {
+            const response = await axios.get(`${this.contentBaseURL}/audiobooks/${id}`)
             
             return {
                 success: true,
                 data: response.data,
                 status: response.status
             }
-        } catch (error) {
-            console.error('Error fetching audiobook:', error)
-            return {
-                success: false,
-                error: error.response?.data?.error || error.message,
-                status: error.response?.status || 500
-            }
-        }
+        }, { id })
     }
 
     /**
-     * Create new audiobook (SUPERADMIN only)
+     * Create new audiobook
      * @param {Object} audiobookData - Audiobook data
      */
-    static async createAudiobook(audiobookData) {
-        try {
-            const response = await axios.post(`${BASE_URL}/audiobooks`, audiobookData)
+    async createAudiobook(audiobookData) {
+        return this.loggedCall('createAudiobook', async () => {
+            const response = await axios.post(
+                `${this.contentBaseURL}/audiobooks`,
+                audiobookData,
+                { headers: this.getHeaders() }
+            )
             
             return {
                 success: true,
                 data: response.data,
                 status: response.status
             }
-        } catch (error) {
-            console.error('Error creating audiobook:', error)
-            return {
-                success: false,
-                error: error.response?.data?.error || error.message,
-                status: error.response?.status || 500
-            }
-        }
+        }, { audiobookData })
     }
 
     /**
-     * Update audiobook (SUPERADMIN only)
+     * Update audiobook
      * @param {number} id - Audiobook ID
      * @param {Object} audiobookData - Updated audiobook data
      */
-    static async updateAudiobook(id, audiobookData) {
-        try {
-            const response = await axios.put(`${BASE_URL}/audiobooks/${id}`, audiobookData)
+    async updateAudiobook(id, audiobookData) {
+        return this.loggedCall('updateAudiobook', async () => {
+            const response = await axios.put(
+                `${this.contentBaseURL}/audiobooks/${id}`,
+                audiobookData,
+                { headers: this.getHeaders() }
+            )
             
             return {
                 success: true,
                 data: response.data,
                 status: response.status
             }
-        } catch (error) {
-            console.error('Error updating audiobook:', error)
-            return {
-                success: false,
-                error: error.response?.data?.error || error.message,
-                status: error.response?.status || 500
-            }
-        }
+        }, { id, audiobookData })
     }
 
     /**
      * Delete audiobook (SUPERADMIN only)
      * @param {number} id - Audiobook ID
      */
-    static async deleteAudiobook(id) {
-        try {
-            const response = await axios.delete(`${BASE_URL}/audiobooks/${id}`)
+    async deleteAudiobook(id) {
+        return this.loggedCall('deleteAudiobook', async () => {
+            const response = await axios.delete(`${this.contentBaseURL}/audiobooks/${id}`)
             
             return {
                 success: true,
                 data: response.data,
                 status: response.status
             }
-        } catch (error) {
-            console.error('Error deleting audiobook:', error)
-            return {
-                success: false,
-                error: error.response?.data?.error || error.message,
-                status: error.response?.status || 500
-            }
-        }
+        })
     }
 
     /**
@@ -133,44 +110,37 @@ class AudiobooksRepository {
      * @param {string} query - Search query
      * @param {Object} params - Additional parameters
      */
-    static async searchAudiobooks(query, params = {}) {
-        try {
+    async searchAudiobooks(query, params = {}) {
+        return this.loggedCall('searchAudiobooks', async () => {
             const queryParams = new URLSearchParams()
             queryParams.append('q', query)
             
             if (params.page) queryParams.append('page', params.page)
             if (params.limit) queryParams.append('limit', params.limit)
 
-            const response = await axios.get(`${BASE_URL}/audiobooks/search?${queryParams}`)
+            const response = await axios.get(`${this.contentBaseURL}/audiobooks/search?${queryParams}`)
             
             return {
                 success: true,
                 data: response.data,
                 status: response.status
             }
-        } catch (error) {
-            console.error('Error searching audiobooks:', error)
-            return {
-                success: false,
-                error: error.response?.data?.error || error.message,
-                status: error.response?.status || 500
-            }
-        }
+        })
     }
 
     /**
      * Get all authors
      * @param {Object} params - Query parameters
      */
-    static async getAllAuthors(params = {}) {
-        try {
+    async getAllAuthors(params = {}) {
+        return this.loggedCall('getAllAuthors', async () => {
             const queryParams = new URLSearchParams()
             
             if (params.page) queryParams.append('page', params.page)
             if (params.limit) queryParams.append('limit', params.limit)
             if (params.search) queryParams.append('q', params.search)
 
-            const response = await axios.get(`${BASE_URL}/authors?${queryParams}`)
+            const response = await axios.get(`${this.contentBaseURL}/authors?${queryParams}`)
             
             // DEBUG: Log response untuk melihat struktur data
             console.log('Authors API Raw Response:', response.data)
@@ -184,44 +154,30 @@ class AudiobooksRepository {
                 data: response.data,
                 status: response.status
             }
-        } catch (error) {
-            console.error('Error fetching authors:', error)
-            return {
-                success: false,
-                error: error.response?.data?.error || error.message,
-                status: error.response?.status || 500
-            }
-        }
+        })
     }
 
     /**
      * Get all genres
      * @param {Object} params - Query parameters
      */
-    static async getAllGenres(params = {}) {
-        try {
+    async getAllGenres(params = {}) {
+        return this.loggedCall('getAllGenres', async () => {
             const queryParams = new URLSearchParams()
             
             if (params.page) queryParams.append('page', params.page)
             if (params.limit) queryParams.append('limit', params.limit)
             if (params.search) queryParams.append('q', params.search)
 
-            const response = await axios.get(`${BASE_URL}/genres?${queryParams}`)
+            const response = await axios.get(`${this.contentBaseURL}/genres?${queryParams}`)
             
             return {
                 success: true,
                 data: response.data,
                 status: response.status
             }
-        } catch (error) {
-            console.error('Error fetching genres:', error)
-            return {
-                success: false,
-                error: error.response?.data?.error || error.message,
-                status: error.response?.status || 500
-            }
-        }
+        })
     }
 }
 
-export default AudiobooksRepository
+export default new AudiobooksRepository()

@@ -11,6 +11,7 @@ import Audiobook from './pages/Audiobook'
 import ListingPage from './pages/ListingPage'
 import SideMenu from './components/SideMenu'
 import Player from './components/Player'
+import RepositoryLogger from './components/RepositoryLogger/RepositoryLogger'
 
 // Import route protections
 import { ProtectedRoute, SuperAdminRoute, UserRoute } from './components/ProtectedRoute'
@@ -77,6 +78,11 @@ function App() {
   return (
     <GlobalProvider>
       <AppContent />
+      
+      {/* Repository Logger - only show in development or demo mode */}
+      {(process.env.NODE_ENV === 'development' || process.env.REACT_APP_SHOW_REPO_LOGGER === 'true') && (
+        <RepositoryLogger />
+      )}
     </GlobalProvider>
   )
 }

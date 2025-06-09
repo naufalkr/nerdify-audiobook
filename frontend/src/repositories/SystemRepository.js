@@ -1,23 +1,23 @@
 import axios from 'axios'
+import BaseRepository from './BaseRepository'
 
-class SystemRepository {
+class SystemRepository extends BaseRepository {
     constructor() {
-        this.baseURL = process.env.REACT_APP_API_URL || 'http://localhost:3160'
+        super('SystemRepository')
         this.apiKey = process.env.REACT_APP_API_KEY || 'system-monitoring-api-key'
     }
 
     getHeaders() {
-        const token = localStorage.getItem('token')
+        const baseHeaders = super.getHeaders()
         return {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json',
+            ...baseHeaders,
             'X-API-Key': this.apiKey
         }
     }
 
     // Get comprehensive system health
     async getSystemHealth() {
-        try {
+        return this.loggedCall('getSystemHealth', async () => {
             const response = await axios.get(
                 `${this.baseURL}/api/system/health`,
                 { 
@@ -34,15 +34,11 @@ class SystemRepository {
                 services: this.normalizeServices(response.data.services || []),
                 lastChecked: new Date().toISOString()
             }
-        } catch (error) {
-            console.warn('SystemRepository: Health check failed, using fallback:', error.message)
-            return this.getFallbackSystemHealth()
-        }
+        })
     }
 
-    // Get system performance metrics
     async getPerformanceMetrics() {
-        try {
+        return this.loggedCall('getPerformanceMetrics', async () => {
             const response = await axios.get(
                 `${this.baseURL}/api/system/metrics`,
                 { headers: this.getHeaders() }
@@ -72,15 +68,12 @@ class SystemRepository {
                     rate: response.data.errors?.rate || 0
                 }
             }
-        } catch (error) {
-            console.warn('SystemRepository: Metrics unavailable, using simulated data:', error.message)
-            return this.getSimulatedMetrics()
-        }
+        })
     }
 
     // Get database health and statistics
     async getDatabaseHealth() {
-        try {
+        return this.loggedCall('getDatabaseHealth', async () => {
             const response = await axios.get(
                 `${this.baseURL}/api/system/database`,
                 { headers: this.getHeaders() }
@@ -103,15 +96,12 @@ class SystemRepository {
                     percentage: response.data.size?.percentage || 0
                 }
             }
-        } catch (error) {
-            console.warn('SystemRepository: Database metrics unavailable:', error.message)
-            return this.getFallbackDatabaseHealth()
-        }
+        })
     }
 
     // Get active sessions information
     async getActiveSessions() {
-        try {
+        return this.loggedCall('getActiveSessions', async () => {
             const response = await axios.get(
                 `${this.baseURL}/api/system/sessions`,
                 { headers: this.getHeaders() }
@@ -125,15 +115,12 @@ class SystemRepository {
                 recentActivity: response.data.recentActivity || [],
                 averageDuration: response.data.averageDuration || 0
             }
-        } catch (error) {
-            console.warn('SystemRepository: Session data unavailable:', error.message)
-            return this.estimateActiveSessions()
-        }
+        })
     }
 
     // Get system logs
     async getSystemLogs(level = 'all', limit = 100) {
-        try {
+        return this.loggedCall('getSystemLogs', async () => {
             const params = new URLSearchParams({
                 level,
                 limit: limit.toString()
@@ -145,10 +132,7 @@ class SystemRepository {
             )
 
             return response.data.logs || []
-        } catch (error) {
-            console.warn('SystemRepository: System logs unavailable:', error.message)
-            return this.getMockLogs()
-        }
+        })
     }
 
     // Get security events

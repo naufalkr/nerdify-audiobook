@@ -1,4 +1,4 @@
-import React, { useContext, useEffect, useState } from 'react'
+import React, { useContext, useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { GlobalContext } from '../../contexts'
 import { logoutUser } from '../../utils/api'
@@ -11,6 +11,7 @@ function User(){
     const [userProfile, setUserProfile] = useState(null)
     const [showDropdown, setShowDropdown] = useState(false)
     const [loading, setLoading] = useState(false)
+    const [profileLoaded, setProfileLoaded] = useState(false) // Add this state
 
     const handleLogout = async () => {
         setLoading(true)
@@ -35,6 +36,11 @@ function User(){
 
     useEffect(() => {
         const func = async() => {
+            // Prevent multiple calls if profile already loaded
+            if (profileLoaded) {
+                return
+            }
+
             // Check if token exists
             const token = localStorage.getItem('token')
             if (!token) {
@@ -52,39 +58,49 @@ function User(){
                     console.log('Restoring user from localStorage:', userData)
                     setUser(userData) // Store full user object
                     setUserProfile(userData)
+                    setProfileLoaded(true) // Mark as loaded
                     return
                 } catch (e) {
                     console.error('Error parsing saved user data:', e)
                 }
             }
 
-            // Get fresh user profile using UserRepository
-            console.log('UserComponent: Fetching user profile via UserRepository...')
-            const [response, err] = await handlePromise(UserRepository.getCurrentUser())
-            
-            if(err){
-                console.error('UserRepository profile fetch failed:', err)
-                // Token might be expired, remove it
-                localStorage.removeItem('token')
-                localStorage.removeItem('user')
-                localStorage.removeItem('mockUser')
-                setUser("")
-                setUserProfile(null)
-                return
-            }
+            // Only fetch if we don't have user data
+            if (!user) {
+                // Get fresh user profile using UserRepository
+                console.log('UserComponent: Fetching user profile via UserRepository...')
+                const [response, err] = await handlePromise(UserRepository.getCurrentUser())
+                
+                if(err){
+                    console.error('UserRepository profile fetch failed:', err)
+                    // Token might be expired, remove it
+                    localStorage.removeItem('token')
+                    localStorage.removeItem('user')
+                    localStorage.removeItem('mockUser')
+                    setUser("")
+                    setUserProfile(null)
+                    setProfileLoaded(true) // Mark as loaded even on error
+                    return
+                }
 
-            console.log('UserRepository profile fetched:', response)
-            
-            // Handle UserRepository response
-            let userData = response
-            
-            // Update user state and save to localStorage
-            setUser(userData) // Store full user object
-            setUserProfile(userData)
-            localStorage.setItem('user', JSON.stringify(userData))
+                console.log('UserRepository profile fetched:', response)
+                
+                // Handle UserRepository response
+                let userData = response
+                
+                // Update user state and save to localStorage
+                setUser(userData) // Store full user object
+                setUserProfile(userData)
+                localStorage.setItem('user', JSON.stringify(userData))
+                setProfileLoaded(true) // Mark as loaded
+            } else {
+                // If user exists, just set the profile
+                setUserProfile(user)
+                setProfileLoaded(true)
+            }
         }
         func()
-    }, [setUser, user])
+    }, [setUser]) // Remove 'user' from dependency array
 
     // Get user display name
     const getDisplayName = () => {

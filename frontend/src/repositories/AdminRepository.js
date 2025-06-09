@@ -1,94 +1,50 @@
 import axios from 'axios'
+import BaseRepository from './BaseRepository'
 
-class AdminRepository {
+class AdminRepository extends BaseRepository {
     constructor() {
-        this.baseURL = process.env.REACT_APP_API_URL || 'http://localhost:3160'
+        super('AdminRepository')
         this.apiKey = process.env.REACT_APP_API_KEY || 'admin-dashboard-api-key'
     }
 
-    // Get API headers with authentication
     getHeaders() {
-        const token = localStorage.getItem('token')
+        const baseHeaders = super.getHeaders()
         return {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json',
+            ...baseHeaders,
             'X-API-Key': this.apiKey
         }
     }
 
-    // Get system statistics for admin dashboard
     async getSystemStats() {
-        try {
-            console.log('AdminRepository: Fetching system stats...')
-            
+        return this.loggedCall('getSystemStats', async () => {
             const [userStats, systemHealth, sessionStats] = await Promise.allSettled([
                 this.getUserStats(),
                 this.getSystemHealth(),
                 this.getActiveSessionStats()
             ])
-
-            const result = {
+            
+            return {
                 totalUsers: userStats.status === 'fulfilled' ? userStats.value.totalUsers : 0,
-                totalAudiobooks: 0, // Will be implemented when audiobook service is ready
                 activeSessions: sessionStats.status === 'fulfilled' ? sessionStats.value.activeSessions : 0,
                 systemStatus: systemHealth.status === 'fulfilled' ? systemHealth.value.status : 'unknown',
-                lastUpdated: new Date().toISOString(),
-                userGrowthRate: userStats.status === 'fulfilled' ? userStats.value.userGrowthRate : 0,
-                newUsersToday: userStats.status === 'fulfilled' ? userStats.value.newUsersToday : 0
+                lastUpdated: new Date().toISOString()
             }
-
-            console.log('AdminRepository: System stats retrieved:', result)
-            return result
-        } catch (error) {
-            console.error('AdminRepository: Error fetching system stats:', error)
-            throw new Error('Failed to fetch system statistics')
-        }
+        })
     }
 
-    // Get user statistics from backend
     async getUserStats() {
-        try {
-            console.log('AdminRepository: Fetching user stats...')
-            
-            // Try to get from external API first
+        return this.loggedCall('getUserStats', async () => {
             const response = await axios.get(
                 `${this.baseURL}/api/external/users/stats`,
                 { headers: this.getHeaders(), timeout: 5000 }
             )
-
-            const stats = {
+            return {
                 totalUsers: response.data.totalUsers || response.data.total || 0,
                 activeUsers: response.data.activeUsers || 0,
                 newUsersToday: response.data.newUsersToday || 0,
                 userGrowthRate: response.data.userGrowthRate || 0
             }
-
-            console.log('AdminRepository: User stats from API:', stats)
-            return stats
-        } catch (error) {
-            console.warn('AdminRepository: API unavailable, using backend fallback:', error.message)
-            
-            // Fallback to admin users endpoint
-            try {
-                const response = await axios.get(
-                    `${this.baseURL}/api/admin/users?page=1&page_size=1`,
-                    { headers: this.getHeaders(), timeout: 3000 }
-                )
-
-                const fallbackStats = {
-                    totalUsers: response.data.total || 0,
-                    activeUsers: Math.floor((response.data.total || 0) * 0.75),
-                    newUsersToday: Math.floor(Math.random() * 25) + 5,
-                    userGrowthRate: (Math.random() * 10 + 2).toFixed(1)
-                }
-
-                console.log('AdminRepository: User stats from fallback:', fallbackStats)
-                return fallbackStats
-            } catch (fallbackError) {
-                console.warn('AdminRepository: Using mock user stats:', fallbackError.message)
-                return this.getFallbackUserStats()
-            }
-        }
+        })
     }
 
     // Get system health status

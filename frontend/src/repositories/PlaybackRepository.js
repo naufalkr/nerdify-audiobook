@@ -1,17 +1,21 @@
 import axios from 'axios'
+import BaseRepository from './BaseRepository'
 
-const BASE_URL = 'http://localhost:3163/api/v1'
+class PlaybackRepository extends BaseRepository {
+    constructor() {
+        super('PlaybackRepository')
+        this.contentBaseURL = 'http://localhost:3163/api/v1' // Content Management Service
+    }
 
-class PlaybackRepository {
     /**
      * Get track details by ID for playback
      * @param {number} trackId - Track ID
      */
-    static async getTrackById(trackId) {
-        try {
+    async getTrackById(trackId) {
+        return this.loggedCall('getTrackById', async () => {
             console.log(`🎵 Fetching track data for ID: ${trackId}`)
             
-            const response = await axios.get(`${BASE_URL}/tracks/${trackId}`)
+            const response = await axios.get(`${this.contentBaseURL}/tracks/${trackId}`)
             
             console.log('✅ Track data received:', response.data)
             
@@ -20,25 +24,18 @@ class PlaybackRepository {
                 data: response.data,
                 status: response.status
             }
-        } catch (error) {
-            console.error('❌ Error fetching track:', error)
-            return {
-                success: false,
-                error: error.response?.data?.error || error.message,
-                status: error.response?.status || 500
-            }
-        }
+        }, { trackId })
     }
 
     /**
      * Get all tracks for an audiobook (for playlist functionality)
      * @param {number} audiobookId - Audiobook ID
      */
-    static async getTracksByAudiobookId(audiobookId) {
-        try {
+    async getTracksByAudiobookId(audiobookId) {
+        return this.loggedCall('getTracksByAudiobookId', async () => {
             console.log(`🎵 Fetching tracks for audiobook ID: ${audiobookId}`)
             
-            const response = await axios.get(`${BASE_URL}/tracks/audiobook/${audiobookId}`)
+            const response = await axios.get(`${this.contentBaseURL}/tracks/audiobook/${audiobookId}`)
             
             console.log('✅ Tracks data received:', response.data)
             
@@ -47,14 +44,36 @@ class PlaybackRepository {
                 data: response.data,
                 status: response.status
             }
-        } catch (error) {
-            console.error('❌ Error fetching tracks:', error)
-            return {
-                success: false,
-                error: error.response?.data?.error || error.message,
-                status: error.response?.status || 500
+        }, { audiobookId })
+    }
+
+    /**
+     * Record playback progress
+     * @param {number} trackId - Track ID
+     * @param {number} currentTime - Current playback time in seconds
+     * @param {number} duration - Total track duration in seconds
+     */
+    async recordProgress(trackId, currentTime, duration) {
+        return this.loggedCall('recordProgress', async () => {
+            const progressData = {
+                track_id: trackId,
+                current_time: currentTime,
+                duration: duration,
+                progress_percentage: Math.round((currentTime / duration) * 100)
             }
-        }
+
+            const response = await axios.post(
+                `${this.contentBaseURL}/playback/progress`,
+                progressData,
+                { headers: this.getHeaders() }
+            )
+            
+            return {
+                success: true,
+                data: response.data,
+                status: response.status
+            }
+        }, { trackId, currentTime, duration })
     }
 
     /**
@@ -243,4 +262,4 @@ class PlaybackRepository {
     }
 }
 
-export default PlaybackRepository
+export default new PlaybackRepository()

@@ -1,0 +1,204 @@
+.repo-logger-button {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    width: 60px;
+    height: 60px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+    transition: all 0.3s ease;
+    z-index: 1000;
+}
+
+.repo-logger-button:hover {
+    transform: scale(1.1);
+    box-shadow: 0 6px 25px rgba(0, 0, 0, 0.4);
+}
+
+.repo-logger-icon {
+    font-size: 24px;
+    color: white;
+}
+
+.repo-logger-badge {
+    position: absolute;
+    top: -5px;
+    right: -5px;
+    background: #ff4444;
+    color: white;
+    border-radius: 50%;
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: bold;
+}
+
+.repo-logger-panel {
+    position: fixed;
+    bottom: 100px;
+    right: 20px;
+    width: 450px;
+    max-height: 600px;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+    z-index: 999;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    border: 1px solid #e0e0e0;
+}
+
+.repo-logger-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 15px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.repo-logger-header h3 {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.repo-logger-controls {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.repo-logger-filter {
+    padding: 5px 8px;
+    border: none;
+    border-radius: 4px;
+    font-size: 12px;
+    background: rgba(255, 255, 255, 0.9);
+}
+
+.repo-logger-clear,
+.repo-logger-close {
+    background: rgba(255, 255, 255, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    color: white;
+    padding: 5px 8px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 12px;
+    transition: background 0.2s;
+}
+
+.repo-logger-clear:hover,
+.repo-logger-close:hover {
+    background: rgba(255, 255, 255, 0.3);
+}
+
+.repo-logger-content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 10px;
+    max-height: 500px;
+}
+
+.repo-logger-empty {
+    text-align: center;
+    padding: 40px 20px;
+    color: #666;
+}
+
+.repo-logger-item {
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    margin-bottom: 10px;
+    overflow: hidden;
+    transition: box-shadow 0.2s;
+}
+
+.repo-logger-item:hover {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.repo-logger-item-header {
+    background: #f5f5f5;
+    padding: 8px 12px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 12px;
+}
+
+.repo-logger-service-badge {
+    color: white;
+    padding: 2px 6px;
+    border-radius: 10px;
+    font-size: 10px;
+    font-weight: bold;
+}
+
+.repo-logger-repository {
+    font-weight: 600;
+    color: #333;
+}
+
+.repo-logger-timestamp {
+    color: #666;
+    font-size: 11px;
+}
+
+.repo-logger-item-body {
+    padding: 12px;
+}
+
+.repo-logger-method {
+    margin-bottom: 8px;
+    font-size: 13px;
+}
+
+.repo-logger-params {
+    margin-bottom: 8px;
+    font-size: 12px;
+}
+
+.repo-logger-params code {
+    background: #f5f5f5;
+    padding: 4px 6px;
+    border-radius: 4px;
+    font-size: 11px;
+    display: block;
+    margin-top: 4px;
+    white-space: pre-wrap;
+    max-height: 100px;
+    overflow-y: auto;
+}
+
+.repo-logger-status {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.repo-logger-status-badge {
+    color: white;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: bold;
+}
+
+.repo-logger-duration {
+    font-size: 11px;
+    color: #666;
+    background: #f0f0f0;
+    padding: 2px 6px;
+    border-radius: 8px;
+}

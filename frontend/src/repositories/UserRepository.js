@@ -1,25 +1,23 @@
 import axios from 'axios'
+import BaseRepository from './BaseRepository'
 
-class UserRepository {
+class UserRepository extends BaseRepository {
     constructor() {
-        this.baseURL = process.env.REACT_APP_API_URL || 'http://localhost:3160'
+        super('UserRepository')
         // Remove apiKey since it's causing CORS issues
     }
 
     getHeaders() {
-        const token = localStorage.getItem('token')
-        console.log('UserRepository: Token found:', token ? 'YES' : 'NO')
-        
+        const baseHeaders = super.getHeaders()
         return {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
+            ...baseHeaders
             // Remove X-API-Key header that's causing CORS issues
         }
     }
 
     // Get all users for admin dashboard (FIXED METHOD)
     async getAllUsersForAdmin(page = 1, limit = 20, search = '') {
-        try {
+        return this.loggedCall('getAllUsersForAdmin', async () => {
             console.log('=== UserRepository: getAllUsersForAdmin START ===')
             console.log(`Page: ${page}, Limit: ${limit}, Search: "${search}"`)
             console.log(`BaseURL: ${this.baseURL}`)
@@ -67,64 +65,11 @@ class UserRepository {
             console.log('=== UserRepository: getAllUsersForAdmin END ===')
             
             return result
-        } catch (error) {
-            console.error('=== UserRepository: getAllUsersForAdmin ERROR ===')
-            console.error('Error details:', error)
-            console.error('Error message:', error.message)
-            console.error('Error response:', error.response?.data)
-            console.error('Error status:', error.response?.status)
-            
-            // Return empty result instead of throwing to prevent component crash
-            return {
-                users: [],
-                total: 0,
-                page: page,
-                totalPages: 0
-            }
-        }
+        }, { page, limit, search })
     }
 
-    // Update user role
-    async updateUserRole(userId, newRole) {
-        try {
-            console.log(`UserRepository: Updating user ${userId} role to ${newRole}`)
-            
-            const response = await axios.put(
-                `${this.baseURL}/api/admin/users/${userId}/role`,
-                { role: newRole },
-                { headers: this.getHeaders() }
-            )
-
-            console.log(`UserRepository: User ${userId} role updated to ${newRole}`)
-            return response.data
-        } catch (error) {
-            console.error(`UserRepository: Error updating user role:`, error)
-            throw new Error('Failed to update user role')
-        }
-    }
-
-    // Toggle user status
-    async toggleUserStatus(userId, isActive) {
-        try {
-            console.log(`UserRepository: Toggling user ${userId} status to ${isActive}`)
-            
-            const response = await axios.put(
-                `${this.baseURL}/api/admin/users/${userId}/status`,
-                { is_active: isActive },
-                { headers: this.getHeaders() }
-            )
-
-            console.log(`UserRepository: User ${userId} status updated`)
-            return response.data
-        } catch (error) {
-            console.error(`UserRepository: Error toggling user status:`, error)
-            throw new Error('Failed to update user status')
-        }
-    }
-
-    // Update user by admin
     async updateUser(userId, userData) {
-        try {
+        return this.loggedCall('updateUser', async () => {
             console.log(`UserRepository: Updating user ${userId}`, userData)
             
             const response = await axios.put(
@@ -135,33 +80,11 @@ class UserRepository {
 
             console.log(`UserRepository: User ${userId} updated successfully`)
             return response.data
-        } catch (error) {
-            console.error(`UserRepository: Error updating user:`, error)
-            throw new Error(error.response?.data?.message || 'Failed to update user')
-        }
+        }, { userId, userData })
     }
 
-    // Delete user by admin  
-    async deleteUser(userId) {
-        try {
-            console.log(`UserRepository: Deleting user ${userId}`)
-            
-            const response = await axios.delete(
-                `${this.baseURL}/api/admin/users/${userId}`,
-                { headers: this.getHeaders() }
-            )
-
-            console.log(`UserRepository: User ${userId} deleted successfully`)
-            return response.data
-        } catch (error) {
-            console.error(`UserRepository: Error deleting user:`, error)
-            throw new Error(error.response?.data?.message || 'Failed to delete user')
-        }
-    }
-
-    // Get current user profile
     async getCurrentUser() {
-        try {
+        return this.loggedCall('getCurrentUser', async () => {
             console.log('UserRepository: Fetching current user profile')
             
             const response = await axios.get(
@@ -172,17 +95,11 @@ class UserRepository {
             const user = response.data.user || response.data.data || null
             console.log('UserRepository: Current user profile retrieved')
             return user
-        } catch (error) {
-            console.error('UserRepository: Error fetching current user:', error)
-            // Fallback to localStorage user data
-            const userData = localStorage.getItem('user')
-            return userData ? JSON.parse(userData) : null
-        }
+        })
     }
 
-    // Update user profile
     async updateUserProfile(profileData) {
-        try {
+        return this.loggedCall('updateUserProfile', async () => {
             console.log('UserRepository: Updating user profile', profileData)
             
             const response = await axios.put(
@@ -193,10 +110,7 @@ class UserRepository {
 
             console.log('UserRepository: Profile updated successfully')
             return response.data
-        } catch (error) {
-            console.error('UserRepository: Error updating profile:', error)
-            throw new Error(error.response?.data?.message || 'Failed to update profile')
-        }
+        }, { profileData })
     }
 }
 
