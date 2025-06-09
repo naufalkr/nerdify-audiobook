@@ -488,7 +488,7 @@ function AdminAudiobooks() {
                 <div className="admin-header-content">
                     <img 
                         src="/assets/new-logo.svg" 
-                        alt="The Book Hub" 
+                        alt="Nerdify Audiobook" 
                         className="admin-logo"
                     />
                     <div className="admin-user-info">

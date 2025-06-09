@@ -20,7 +20,7 @@ function Profile() {
     })
 
     useEffect(() => {
-        document.title = "Profile | The Book Hub"
+        document.title = "Profile | Nerdify Audiobook"
         
         // Redirect if not logged in
         if (!user) {

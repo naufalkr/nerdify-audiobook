@@ -9,7 +9,7 @@ import { search } from '../../utils/api'
 import './style.css'
 
 function Search({ history, location }){
-    document.title = "Search Results | The Book Hub"
+    document.title = "Search Results | Nerdify Audiobook"
 
     const [searchBarValue, setSearchBarValue] = useState("")
     const [loadedResults, setLoadedResults] = useState(false)

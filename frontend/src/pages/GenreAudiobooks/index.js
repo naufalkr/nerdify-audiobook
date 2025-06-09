@@ -5,7 +5,7 @@ import Audiobook from '../../components/Audiobook'
 import { CatalogRepository } from '../../repositories'
 
 function GenreAudiobooks({ history, match }) {
-    document.title = "Genre Audiobooks | The Book Hub"
+    document.title = "Genre Audiobooks | Nerdify Audiobook"
 
     const genreName = match.params.genre
     const [loadedResults, setLoadedResults] = useState(false)

@@ -16,9 +16,9 @@ function SideMenu() {
                 <img 
                     src="/assets/new-logo.svg"
                     className="logo"
-                    alt="The Book Hub"
+                    alt="Nerdify Audiobook"
                 />
-                <h3 className="org-name">The Book Hub</h3>
+                <h3 className="org-name">Nerdify Audiobook</h3>
             </div>
             <div className="actions">
                 <div 

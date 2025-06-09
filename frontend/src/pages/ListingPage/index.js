@@ -5,7 +5,7 @@ import { CatalogRepository } from '../../repositories'
 import './style.css'
 
 function ListingPage({ history }){
-    document.title = "Curated Audiobooks | The Book Hub"
+    document.title = "Curated Audiobooks | Nerdify Audiobook"
 
     const [audiobooks, setAudiobooks] = useState([])
     const [genres, setGenres] = useState([])

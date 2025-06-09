@@ -259,7 +259,7 @@ function AdminUsers() {
                     <Link to="/admin" className="admin-logo-link">
                         <img 
                             src="/assets/new-logo.svg" 
-                            alt="The Book Hub" 
+                            alt="Nerdify Audiobook" 
                             className="admin-logo"
                         />
                     </Link>

@@ -15,7 +15,7 @@ function Login() {
     const [error, setError] = useState('')
 
     React.useEffect(() => {
-        document.title = "Login | The Book Hub"
+        document.title = "Login | Nerdify Audiobook"
     }, [])
 
     const handleChange = (e) => {
@@ -120,7 +120,7 @@ function Login() {
                 <div className="auth-header">
                     <img 
                         src="/assets/new-logo.svg" 
-                        alt="The Book Hub" 
+                        alt="Nerdify Audiobook" 
                         className="auth-logo"
                     />
                     <h1 className="auth-title">Welcome Back</h1>

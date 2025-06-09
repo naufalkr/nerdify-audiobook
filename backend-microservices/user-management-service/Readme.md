@@ -25,21 +25,6 @@ DB_NAME=nerdify-user-management
 JWT_SECRET=your-secret-key
 ```
 
-### Run with Docker
-
-1. Build and start containers:
-    ```bash
-    docker-compose up --build
-    ```
-2. Stop containers:
-    ```bash
-    docker-compose down
-    ```
-3. Remove volumes along with containers:
-    ```bash
-    docker-compose down -v
-    ```
-
 ### Run Locally (Without Docker)
 
 1. Install dependencies:
@@ -52,7 +37,11 @@ JWT_SECRET=your-secret-key
     ```
 3. Run the application:
     ```bash
-    go run main.go 
+    # Kalo baru pertama kali run, seed ke db nya:
+    go run main.go -seed
+
+    # Run biasa
+    go run main.go
     ```
 
 ## Service Integration

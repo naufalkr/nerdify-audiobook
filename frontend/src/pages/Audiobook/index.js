@@ -6,7 +6,7 @@ import { CatalogRepository } from '../../repositories'
 import './style.css'
 
 function Audiobook({ match, history }) {
-    document.title = "Audiobook Details | The Book Hub"
+    document.title = "Audiobook Details | Nerdify Audiobook"
 
     const audiobookId = match.params.id
     const { playAudio } = useContext(GlobalContext)

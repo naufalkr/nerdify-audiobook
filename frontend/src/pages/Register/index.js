@@ -19,7 +19,7 @@ function Register({ history }) {
     const [success, setSuccess] = useState(false)
 
     React.useEffect(() => {
-        document.title = "Register | The Book Hub"
+        document.title = "Register | Nerdify Audiobook"
     }, [])
 
     const handleChange = (e) => {
@@ -106,10 +106,10 @@ function Register({ history }) {
                 <div className="auth-header">
                     <img 
                         src="/assets/new-logo.svg" 
-                        alt="The Book Hub" 
+                        alt="Nerdify Audiobook" 
                         className="auth-logo"
                     />
-                    <h1 className="auth-title">Join The Book Hub</h1>
+                    <h1 className="auth-title">Join Nerdify Audiobook</h1>
                     <p className="auth-subtitle">Create your account to start your audiobook journey</p>
                 </div>
 

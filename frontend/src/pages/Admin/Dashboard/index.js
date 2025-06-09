@@ -17,7 +17,7 @@ function AdminDashboard() {
     const [error, setError] = useState(null)
 
     useEffect(() => {
-        document.title = "Admin Dashboard | The Book Hub"
+        document.title = "Admin Dashboard | Nerdify Audiobook"
         loadStats()
     }, [])
 
@@ -116,7 +116,7 @@ function AdminDashboard() {
                 <div className="admin-header-content">
                     <img 
                         src="/assets/new-logo.svg" 
-                        alt="The Book Hub" 
+                        alt="Nerdify Audiobook" 
                         className="admin-logo"
                     />
                     <div className="admin-user-info">
